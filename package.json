@@ -10,6 +10,10 @@
     "format": "prettier --cache --write ."
   },
   "dependencies": {
+    "@fedify/fedify": "^1.8.14",
+    "@fedify/next": "^1.9.0",
+    "@fedify/redis": "^1.8.14",
+    "ioredis": "^5.8.1",
     "next": "15.5.6",
     "react": "19.1.0",
     "react-dom": "19.1.0"
