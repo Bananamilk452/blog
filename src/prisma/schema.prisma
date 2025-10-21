@@ -14,6 +14,22 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Actor {
+  id               String   @id @default(uuid(7))
+  user             User?    @relation(fields: [userId], references: [id])
+  uri              String   @unique
+  handle           String   @unique
+  name             String?
+  inboxUrl         String   @unique
+  shared_inbox_url String?
+  url              String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now()) @updatedAt
+  userId           String?
+
+  @@map("actor")
+}
+
 model User {
   id            String    @id
   name          String
@@ -27,10 +43,11 @@ model User {
 
   username        String?
   displayUsername String?
+  actor           Actor[]
 
   @@unique([email])
-  @@map("user")
   @@unique([username])
+  @@map("user")
 }
 
 model Session {
