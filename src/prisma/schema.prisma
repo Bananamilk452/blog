@@ -15,19 +15,31 @@ datasource db {
 }
 
 model Actor {
-  id               String   @id @default(uuid(7))
-  user             User?    @relation(fields: [userId], references: [id])
-  uri              String   @unique
-  handle           String   @unique
-  name             String?
-  inboxUrl         String   @unique
+  id             String   @id @default(uuid(7))
+  user           User?    @relation(fields: [userId], references: [id])
+  uri            String   @unique
+  handle         String   @unique
+  name           String?
+  inboxUrl       String   @unique
   sharedInboxUrl String?
-  url              String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @default(now()) @updatedAt
-  userId           String?
+  url            String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
+  userId         String?
 
   @@map("actor")
+}
+
+model Keys {
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String   
+  type       String  
+  privateKey String
+  publicKey  String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+
+  @@id([userId, type])
 }
 
 model User {
@@ -44,6 +56,7 @@ model User {
   username        String
   displayUsername String
   actor           Actor[]
+  keys            Keys[]
 
   @@unique([email])
   @@unique([username])
