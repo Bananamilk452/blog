@@ -21,7 +21,7 @@ model Actor {
   handle           String   @unique
   name             String?
   inboxUrl         String   @unique
-  shared_inbox_url String?
+  sharedInboxUrl String?
   url              String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @default(now()) @updatedAt
@@ -41,8 +41,8 @@ model User {
   sessions      Session[]
   accounts      Account[]
 
-  username        String?
-  displayUsername String?
+  username        String
+  displayUsername String
   actor           Actor[]
 
   @@unique([email])
