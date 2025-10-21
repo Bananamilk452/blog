@@ -9,14 +9,14 @@ importers:
   .:
     dependencies:
       '@fedify/fedify':
-        specifier: ^1.8.14
-        version: 1.8.14(web-streams-polyfill@3.3.3)
+        specifier: ^1.9.0
+        version: 1.9.0(web-streams-polyfill@3.3.3)
       '@fedify/next':
         specifier: ^1.9.0
-        version: 1.9.0(@fedify/fedify@1.8.14(web-streams-polyfill@3.3.3))(next@15.5.6(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))
+        version: 1.9.0(@fedify/fedify@1.9.0(web-streams-polyfill@3.3.3))(next@15.5.6(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))
       '@fedify/redis':
         specifier: ^1.8.14
-        version: 1.8.14(@fedify/fedify@1.8.14(web-streams-polyfill@3.3.3))(ioredis@5.8.1)
+        version: 1.8.14(@fedify/fedify@1.9.0(web-streams-polyfill@3.3.3))(ioredis@5.8.1)
       '@prisma/client':
         specifier: 6.17.1
         version: 6.17.1(prisma@6.17.1(typescript@5.9.3))(typescript@5.9.3)
@@ -203,8 +203,8 @@ packages:
     resolution: {integrity: sha512-vBZP4NlzfOlerQTnba4aqZoMhE/a9HY7HRqoOPaETQcSQuWEIyZMHGfVu6w9wGtGK5fED5qRs2DteVCjOH60sA==}
     engines: {node: '>=14'}
 
-  '@fedify/fedify@1.8.14':
-    resolution: {integrity: sha512-f2RJQQD7sxb7y6Gdi9VdCNdYIqXc+SJ/RsMYJpahTbSQ0pMgroKFxBM3+b8e/EfEBzNUlgpDhcBFWKunQ1Hq7w==}
+  '@fedify/fedify@1.9.0':
+    resolution: {integrity: sha512-9UQp2cZjYGUT6Ns+SaKgNY/6NXg5KP+kGmLpMTF8jEJQVp8fkPvpbF/unRULR9bdoejyiwVmqxFvaiSbo1k0Vw==}
     engines: {bun: '>=1.1.0', deno: '>=2.0.0', node: '>=22.0.0'}
 
   '@fedify/next@1.9.0':
@@ -221,13 +221,6 @@ packages:
 
   '@hexagon/base64@1.1.28':
     resolution: {integrity: sha512-lhqDEAvWixy3bZ+UOYbPwUbBkwBq5C1LAJ/xPC8Oi+lL54oyakv/npbA0aU2hgCsx/1NUd4IBvV03+aUBWxerw==}
-
-  '@hugoalh/http-header-link@1.0.3':
-    resolution: {integrity: sha512-x4jzzKSzZQY115H/GxUWaAHzT5eqLXt99uSKY7+0O/h3XrV248+CkZA7cA274QahXzWkGQYYug/AF6QUkTnLEw==}
-    engines: {node: '>=16.13.0'}
-
-  '@hugoalh/is-string-singleline@1.0.5':
-    resolution: {integrity: sha512-mFCgmAUK+xnWgst2qxXKSJc3b7sQSZ9z3Chen1fh7TonInMhHYvy3Dk6fpKPXX/rTrs0wCRSrR93Q/9C7Ger8A==}
 
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
@@ -2690,10 +2683,9 @@ snapshots:
 
   '@fastify/busboy@2.1.1': {}
 
-  '@fedify/fedify@1.8.14(web-streams-polyfill@3.3.3)':
+  '@fedify/fedify@1.9.0(web-streams-polyfill@3.3.3)':
     dependencies:
       '@cfworker/json-schema': 4.1.1
-      '@hugoalh/http-header-link': 1.0.3
       '@js-temporal/polyfill': 0.5.1
       '@logtape/logtape': 1.1.1
       '@multiformats/base-x': 4.0.1
@@ -2714,25 +2706,19 @@ snapshots:
     transitivePeerDependencies:
       - web-streams-polyfill
 
-  '@fedify/next@1.9.0(@fedify/fedify@1.8.14(web-streams-polyfill@3.3.3))(next@15.5.6(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))':
+  '@fedify/next@1.9.0(@fedify/fedify@1.9.0(web-streams-polyfill@3.3.3))(next@15.5.6(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))':
     dependencies:
-      '@fedify/fedify': 1.8.14(web-streams-polyfill@3.3.3)
+      '@fedify/fedify': 1.9.0(web-streams-polyfill@3.3.3)
       next: 15.5.6(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
 
-  '@fedify/redis@1.8.14(@fedify/fedify@1.8.14(web-streams-polyfill@3.3.3))(ioredis@5.8.1)':
+  '@fedify/redis@1.8.14(@fedify/fedify@1.9.0(web-streams-polyfill@3.3.3))(ioredis@5.8.1)':
     dependencies:
-      '@fedify/fedify': 1.8.14(web-streams-polyfill@3.3.3)
+      '@fedify/fedify': 1.9.0(web-streams-polyfill@3.3.3)
       '@js-temporal/polyfill': 0.5.1
       '@logtape/logtape': 1.1.1
       ioredis: 5.8.1
 
   '@hexagon/base64@1.1.28': {}
-
-  '@hugoalh/http-header-link@1.0.3':
-    dependencies:
-      '@hugoalh/is-string-singleline': 1.0.5
-
-  '@hugoalh/is-string-singleline@1.0.5': {}
 
   '@humanfs/core@0.19.1': {}
 
