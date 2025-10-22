@@ -21,6 +21,7 @@ if (!redisUrl) {
 const federation = createFederation({
   kv: new RedisKvStore(new Redis(redisUrl)),
   queue: new RedisMessageQueue(() => new Redis(redisUrl)),
+  origin: new URL(process.env.PUBLIC_URL!).origin,
 });
 
 federation
