@@ -11,7 +11,8 @@ program
   .requiredOption("-e, --email <email>", "email address")
   .requiredOption("-n, --name <name>", "name")
   .requiredOption("-u, --username <username>", "username")
-  .requiredOption("-p, --password <password>", "password");
+  .requiredOption("-p, --password <password>", "password")
+  .option("--create-actor", "also create an associated actor");
 
 program.parse();
 const options = program.opts();
@@ -38,19 +39,27 @@ async function createUser() {
 
   const url = new URL(process.env.PUBLIC_URL);
 
-  await prisma.actor.create({
-    data: {
-      userId: user.id,
-      uri: `${url.host}/users/${user.username}`,
-      handle: user.username,
-      name: user.name,
-      inboxUrl: `${url.host}/users/${user.username}/inbox`,
-      sharedInboxUrl: `${url.host}/inbox`,
-      url: `${url.origin}/users/${user.username}`,
-    },
-  });
+  if (options.createActor) {
+    await prisma.actor.create({
+      data: {
+        userId: user.id,
+        uri: `${url.host}/users/${user.username}`,
+        handle: user.username,
+        name: user.name,
+        inboxUrl: `${url.host}/users/${user.username}/inbox`,
+        sharedInboxUrl: `${url.host}/inbox`,
+        url: `${url.origin}/users/${user.username}`,
+      },
+    });
+  }
 
-  console.log(`✅ User created: ${options.email}`);
+  if (options.createActor) {
+    console.log(
+      `✅ User created with actor: ${options.email} (${options.username})`,
+    );
+  } else {
+    console.log(`✅ User created: ${options.email} (${options.username})`);
+  }
 }
 
 createUser();
