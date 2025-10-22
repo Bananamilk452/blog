@@ -60,6 +60,7 @@ model Follows {
 
 model Posts {
   id        String   @id @default(uuid(7))
+  uri       String   @unique
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
   content   String
