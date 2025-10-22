@@ -15,19 +15,20 @@ datasource db {
 }
 
 model Actor {
-  id             String    @id @default(uuid(7))
-  user           User?     @relation(fields: [userId], references: [id])
-  uri            String    @unique
-  handle         String    @unique
+  id             String     @id @default(uuid(7))
+  user           User?      @relation(fields: [userId], references: [id])
+  uri            String     @unique
+  handle         String     @unique
   name           String?
-  inboxUrl       String    @unique
+  inboxUrl       String     @unique
   sharedInboxUrl String?
   url            String?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @default(now()) @updatedAt
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @default(now()) @updatedAt
   userId         String?
-  following      Follows[] @relation("Following")
-  follower       Follows[] @relation("Follower")
+  following      Follows[]  @relation("Following")
+  follower       Follows[]  @relation("Follower")
+  mainActor      MainActor?
 
   @@map("actor")
 }
@@ -67,6 +68,16 @@ model Posts {
   updatedAt DateTime @default(now()) @updatedAt
 
   @@map("posts")
+}
+
+model MainActor {
+  id        Int      @id @default(autoincrement())
+  actorId   String   @unique
+  actor     Actor    @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@map("main_actor")
 }
 
 model User {
