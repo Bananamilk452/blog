@@ -57,6 +57,18 @@ model Follows {
   @@map("follows")
 }
 
+model Posts {
+  id        String   @id @default(uuid(7))
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  content   String
+  url       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@map("posts")
+}
+
 model User {
   id            String    @id
   name          String
@@ -72,6 +84,7 @@ model User {
   displayUsername String
   actor           Actor[]
   keys            Keys[]
+  posts           Posts[]
 
   @@unique([email])
   @@unique([username])
