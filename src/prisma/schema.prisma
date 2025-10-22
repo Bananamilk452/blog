@@ -15,31 +15,46 @@ datasource db {
 }
 
 model Actor {
-  id             String   @id @default(uuid(7))
-  user           User?    @relation(fields: [userId], references: [id])
-  uri            String   @unique
-  handle         String   @unique
+  id             String    @id @default(uuid(7))
+  user           User?     @relation(fields: [userId], references: [id])
+  uri            String    @unique
+  handle         String    @unique
   name           String?
-  inboxUrl       String   @unique
+  inboxUrl       String    @unique
   sharedInboxUrl String?
   url            String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @default(now()) @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @default(now()) @updatedAt
   userId         String?
+  following      Follows[] @relation("Following")
+  follower       Follows[] @relation("Follower")
 
   @@map("actor")
 }
 
 model Keys {
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId     String   
-  type       String  
+  userId     String
+  type       String
   privateKey String
   publicKey  String
   createdAt  DateTime @default(now())
   updatedAt  DateTime @default(now()) @updatedAt
 
   @@id([userId, type])
+  @@map("keys")
+}
+
+model Follows {
+  followingId String
+  following   Actor    @relation("Following", fields: [followingId], references: [id])
+  followerId  String
+  follower    Actor    @relation("Follower", fields: [followerId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  @@id([followingId, followerId])
+  @@map("follows")
 }
 
 model User {
