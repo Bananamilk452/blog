@@ -29,6 +29,7 @@ model Actor {
   following      Follows[]  @relation("Following")
   follower       Follows[]  @relation("Follower")
   mainActor      MainActor?
+  posts          Posts[]
 
   @@map("actor")
 }
@@ -63,6 +64,8 @@ model Posts {
   uri       String   @unique
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
+  actor     Actor    @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  actorId   String
   content   String
   url       String?
   createdAt DateTime @default(now())
