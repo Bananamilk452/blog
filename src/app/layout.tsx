@@ -4,6 +4,8 @@ import type { Metadata } from "next";
 
 import "./globals.css";
 
+import { ThemeProvider } from "~/components/providers/ThemeProvider";
+
 const pretendard = localFont({
   src: "./PretendardVariable.woff2",
   display: "swap",
@@ -22,8 +24,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko">
-      <body className={`${pretendard.className} antialiased`}>{children}</body>
+    <html lang="ko" suppressHydrationWarning>
+      <body className={`${pretendard.className} antialiased`}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          disableTransitionOnChange
+        >
+          {children}
+        </ThemeProvider>
+      </body>
     </html>
   );
 }
