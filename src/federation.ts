@@ -8,6 +8,7 @@ import {
   getActorHandle,
   importJwk,
   Person,
+  Undo,
 } from "@fedify/fedify";
 import { RedisKvStore, RedisMessageQueue } from "@fedify/redis";
 import { Redis } from "ioredis";
@@ -173,6 +174,42 @@ federation
       object: follow,
     });
     await ctx.sendActivity(object, follower, accept);
+  })
+  .on(Undo, async (ctx, undo) => {
+    const object = await undo.getObject();
+    if (!(object instanceof Follow)) return;
+    if (undo.actorId == null || object.objectId == null) return;
+    const parsed = ctx.parseUri(object.objectId);
+    if (parsed == null || parsed.type !== "actor") return;
+
+    console.log(parsed.identifier, undo.actorId.href);
+    const followingActor = await prisma.actor.findFirst({
+      where: {
+        user: {
+          username: parsed.identifier,
+        },
+      },
+    });
+
+    const followerActor = await prisma.actor.findFirst({
+      where: {
+        uri: undo.actorId.href,
+      },
+    });
+
+    if (!followingActor || !followerActor) {
+      console.log("Either following or follower actor not found.");
+      return;
+    }
+
+    await prisma.follows.delete({
+      where: {
+        followingId_followerId: {
+          followingId: followingActor.id,
+          followerId: followerActor.id,
+        },
+      },
+    });
   });
 
 export { federation };
