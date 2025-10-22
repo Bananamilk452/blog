@@ -8,6 +8,7 @@ import {
   getActorHandle,
   importJwk,
   Person,
+  Recipient,
   Undo,
 } from "@fedify/fedify";
 import { RedisKvStore, RedisMessageQueue } from "@fedify/redis";
@@ -57,6 +58,7 @@ federation
       url: ctx.getActorUri(identifier),
       publicKey: keys[0].cryptographicKey,
       assertionMethods: keys.map((k) => k.multikey),
+      followers: ctx.getFollowersUri(identifier),
     });
   })
   .setKeyPairsDispatcher(async (ctx, identifier) => {
@@ -225,6 +227,53 @@ federation
         },
       },
     });
+  });
+
+federation
+  .setFollowersDispatcher(
+    "/users/{identifier}/followers",
+    async (ctx, identifier, cursor) => {
+      log(`Dispatching followers for identifier: ${identifier}`);
+
+      const followers = await prisma.follows.findMany({
+        where: {
+          following: {
+            user: {
+              username: identifier,
+            },
+          },
+        },
+        include: {
+          follower: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+      const items: Recipient[] = followers.map((f) => ({
+        id: new URL(f.follower.uri),
+        inboxId: new URL(f.follower.inboxUrl),
+        endpoints:
+          f.follower.sharedInboxUrl == null
+            ? null
+            : { sharedInbox: new URL(f.follower.sharedInboxUrl) },
+      }));
+      return { items };
+    },
+  )
+  .setCounter(async (ctx, identifier) => {
+    log(`Counting followers for identifier: ${identifier}`);
+
+    const result = await prisma.follows.count({
+      where: {
+        following: {
+          user: {
+            username: identifier,
+          },
+        },
+      },
+    });
+    return result;
   });
 
 export { federation };
