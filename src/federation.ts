@@ -11,10 +11,13 @@ import {
   Undo,
 } from "@fedify/fedify";
 import { RedisKvStore, RedisMessageQueue } from "@fedify/redis";
+import debug from "debug";
 import { Redis } from "ioredis";
 
 import { Keys as Key } from "./generated/prisma";
 import { prisma } from "./lib/prisma";
+
+const log = debug("blog:federation");
 
 const redisUrl = process.env.REDIS_URL;
 
@@ -30,6 +33,8 @@ const federation = createFederation({
 
 federation
   .setActorDispatcher("/users/{identifier}", async (ctx, identifier) => {
+    log(`Dispatching actor for identifier: ${identifier}`);
+
     const user = await prisma.user.findFirst({
       where: { username: identifier },
       include: { actor: true },
@@ -55,6 +60,8 @@ federation
     });
   })
   .setKeyPairsDispatcher(async (ctx, identifier) => {
+    log(`Dispatching key pairs for identifier: ${identifier}`);
+
     const user = await prisma.user.findFirst({
       where: { username: identifier },
       include: { keys: true },
@@ -73,7 +80,7 @@ federation
     // 키 쌍을 보유하고 있는지 확인하고, 없으면 생성 후 데이터베이스에 저장:
     for (const keyType of ["RSASSA-PKCS1-v1_5", "Ed25519"] as const) {
       if (keys[keyType] == null) {
-        console.log(
+        log(
           `The user ${identifier} does not have an ${keyType} key; creating one...`,
         );
         const { privateKey, publicKey } = await generateCryptoKeyPair(keyType);
@@ -106,22 +113,28 @@ federation
 federation
   .setInboxListeners("/users/{identifier}/inbox", "/inbox")
   .on(Follow, async (ctx, follow) => {
+    log(`Received Follow activity: ${follow.id?.href}`);
+
     if (follow.objectId == null) {
-      console.log("The Follow object does not have an object:", follow);
+      log("The Follow object does not have an object:", follow);
       return;
     }
 
     const object = ctx.parseUri(follow.objectId);
     if (object == null || object.type !== "actor") {
-      console.log("The Follow object's object is not an actor:", follow);
+      log("The Follow object's object is not an actor:", follow);
       return;
     }
 
     const follower = await follow.getActor();
     if (follower?.id == null || follower.inboxId == null) {
-      console.log("The Follow object does not have an actor:", follow);
+      log("The Follow object does not have an actor:", follow);
       return;
     }
+
+    log(
+      `Processing follow from @${follower.preferredUsername}@${follower.id.hostname} to @${object.handle}`,
+    );
 
     const followingId = (
       await prisma.actor.findFirst({
@@ -133,10 +146,7 @@ federation
       })
     )?.id;
     if (followingId == null) {
-      console.log(
-        "Failed to find the actor to follow in the database:",
-        object,
-      );
+      log("Failed to find the actor to follow in the database:", object);
       return;
     }
 
@@ -176,13 +186,14 @@ federation
     await ctx.sendActivity(object, follower, accept);
   })
   .on(Undo, async (ctx, undo) => {
+    log(`Received Undo activity: ${undo.id?.href}`);
+
     const object = await undo.getObject();
     if (!(object instanceof Follow)) return;
     if (undo.actorId == null || object.objectId == null) return;
     const parsed = ctx.parseUri(object.objectId);
     if (parsed == null || parsed.type !== "actor") return;
 
-    console.log(parsed.identifier, undo.actorId.href);
     const followingActor = await prisma.actor.findFirst({
       where: {
         user: {
@@ -198,9 +209,13 @@ federation
     });
 
     if (!followingActor || !followerActor) {
-      console.log("Either following or follower actor not found.");
+      log("Either following or follower actor not found.");
       return;
     }
+
+    log(
+      `Processing unfollow from ${followerActor?.handle} to @${followingActor?.handle}`,
+    );
 
     await prisma.follows.delete({
       where: {
