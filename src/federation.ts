@@ -7,11 +7,14 @@ import {
   generateCryptoKeyPair,
   getActorHandle,
   importJwk,
+  Note,
   Person,
+  PUBLIC_COLLECTION,
   Recipient,
   Undo,
 } from "@fedify/fedify";
 import { RedisKvStore, RedisMessageQueue } from "@fedify/redis";
+import { Temporal } from "@js-temporal/polyfill";
 import debug from "debug";
 import { Redis } from "ioredis";
 
@@ -276,4 +279,32 @@ federation
     return result;
   });
 
+federation.setObjectDispatcher(
+  Note,
+  "/users/{identifier}/posts/{id}",
+  async (ctx, values) => {
+    log(
+      `Dispatching Note object for identifier: ${values.identifier}, id: ${values.id}`,
+    );
+
+    const post = await prisma.posts.findFirst({
+      where: {
+        id: values.id,
+      },
+    });
+
+    if (!post) return null;
+
+    return new Note({
+      id: ctx.getObjectUri(Note, values),
+      attribution: ctx.getActorUri(values.identifier),
+      to: PUBLIC_COLLECTION,
+      cc: ctx.getFollowersUri(values.identifier),
+      content: post.content,
+      mediaType: "text/html",
+      published: Temporal.Instant.from(post.createdAt.toISOString()),
+      url: ctx.getObjectUri(Note, values),
+    });
+  },
+);
 export { federation };
