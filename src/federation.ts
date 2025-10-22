@@ -1,8 +1,11 @@
 import {
+  Accept,
   createFederation,
   Endpoints,
   exportJwk,
+  Follow,
   generateCryptoKeyPair,
+  getActorHandle,
   importJwk,
   Person,
 } from "@fedify/fedify";
@@ -99,6 +102,77 @@ federation
     return pairs;
   });
 
-federation.setInboxListeners("/users/{identifier}/inbox", "/inbox");
+federation
+  .setInboxListeners("/users/{identifier}/inbox", "/inbox")
+  .on(Follow, async (ctx, follow) => {
+    if (follow.objectId == null) {
+      console.log("The Follow object does not have an object:", follow);
+      return;
+    }
+
+    const object = ctx.parseUri(follow.objectId);
+    if (object == null || object.type !== "actor") {
+      console.log("The Follow object's object is not an actor:", follow);
+      return;
+    }
+
+    const follower = await follow.getActor();
+    if (follower?.id == null || follower.inboxId == null) {
+      console.log("The Follow object does not have an actor:", follow);
+      return;
+    }
+
+    const followingId = (
+      await prisma.actor.findFirst({
+        where: {
+          user: {
+            username: object.identifier,
+          },
+        },
+      })
+    )?.id;
+    if (followingId == null) {
+      console.log(
+        "Failed to find the actor to follow in the database:",
+        object,
+      );
+      return;
+    }
+
+    const followerId = (
+      await prisma.actor.upsert({
+        where: { uri: follower.id.href },
+        create: {
+          uri: follower.id.href,
+          handle: await getActorHandle(follower),
+          name: follower.name?.toString(),
+          inboxUrl: follower.inboxId.href,
+          sharedInboxUrl: follower.endpoints?.sharedInbox?.href,
+          url: follower.url?.href?.toString(),
+        },
+        update: {
+          handle: await getActorHandle(follower),
+          name: follower.name?.toString(),
+          inboxUrl: follower.inboxId.href,
+          sharedInboxUrl: follower.endpoints?.sharedInbox?.href,
+          url: follower.url?.href?.toString(),
+        },
+      })
+    ).id;
+
+    await prisma.follows.create({
+      data: {
+        followingId,
+        followerId,
+      },
+    });
+
+    const accept = new Accept({
+      actor: follow.objectId,
+      to: follow.actorId,
+      object: follow,
+    });
+    await ctx.sendActivity(object, follower, accept);
+  });
 
 export { federation };
