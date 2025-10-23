@@ -13,6 +13,13 @@ const pretendard = localFont({
   variable: "--font-pretendard",
 });
 
+const jetbrainsMono = localFont({
+  src: "./JetBrainsMonoVariable.ttf",
+  display: "swap",
+  weight: "100 900",
+  variable: "--font-jetbrains-mono",
+});
+
 export const metadata: Metadata = {
   title: "블로그",
   description: "블로그",
@@ -25,7 +32,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" suppressHydrationWarning>
-      <body className={`${pretendard.className} antialiased`}>
+      <body
+        className={`${pretendard.className} ${jetbrainsMono.variable} bg-secondary antialiased`}
+      >
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
