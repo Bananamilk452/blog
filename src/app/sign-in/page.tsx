@@ -156,6 +156,8 @@ function SignIn() {
                   </FormItem>
                 )}
               />
+
+              <button type="submit" className="hidden" aria-hidden="true" />
             </form>
           </Form>
         </CardContent>
