@@ -13,5 +13,5 @@ export default {
     "",
     "<TYPES>",
   ],
-  tailwindFunctions: ["cn"],
+  tailwindFunctions: ["cn", "cva"],
 };
