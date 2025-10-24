@@ -7,7 +7,6 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 import { ThemeProvider } from "~/components/providers/ThemeProvider";
-import { DefaultLayout } from "~/layouts/default";
 
 const pretendard = localFont({
   src: "./PretendardVariable.woff2",
@@ -43,7 +42,7 @@ export default function RootLayout({
           defaultTheme="dark"
           disableTransitionOnChange
         >
-          <DefaultLayout>{children}</DefaultLayout>
+          {children}
         </ThemeProvider>
       </body>
     </html>

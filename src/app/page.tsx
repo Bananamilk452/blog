@@ -1,3 +1,9 @@
+import { DefaultLayout } from "~/layouts/default";
+
 export default function Home() {
-  return <h1>대충 내용물</h1>;
+  return (
+    <DefaultLayout>
+      <h1>대충 내용물</h1>;
+    </DefaultLayout>
+  );
 }
