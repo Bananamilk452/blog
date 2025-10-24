@@ -8,6 +8,8 @@ import "./globals.css";
 
 import { ThemeProvider } from "~/components/providers/ThemeProvider";
 
+import Providers from "./providers";
+
 const pretendard = localFont({
   src: "./PretendardVariable.woff2",
   display: "swap",
@@ -42,7 +44,7 @@ export default function RootLayout({
           defaultTheme="dark"
           disableTransitionOnChange
         >
-          {children}
+          <Providers>{children}</Providers>
         </ThemeProvider>
       </body>
     </html>
