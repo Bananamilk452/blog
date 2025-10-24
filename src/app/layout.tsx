@@ -7,6 +7,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 import { ThemeProvider } from "~/components/providers/ThemeProvider";
+import { Toaster } from "~/components/ui/sonner";
 
 import Providers from "./providers";
 
@@ -44,7 +45,10 @@ export default function RootLayout({
           defaultTheme="dark"
           disableTransitionOnChange
         >
-          <Providers>{children}</Providers>
+          <Providers>
+            {children}
+            <Toaster />
+          </Providers>
         </ThemeProvider>
       </body>
     </html>
