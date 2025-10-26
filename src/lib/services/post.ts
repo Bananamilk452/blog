@@ -1,18 +1,24 @@
-import { createPost } from "~/lib/models/post";
+import { createPost, getPost } from "~/lib/models/post";
+import { requireUserId } from "~/lib/utils-server";
 
 export class PostService {
-  userId: string;
+  userId?: string;
 
-  constructor(userId: string) {
+  constructor(userId?: string) {
     this.userId = userId;
   }
 
+  @requireUserId
   async createPost(data: { title: string; content: string }) {
     if (data.content.trim().length === 0) {
       throw new Error("Content cannot be empty");
     }
 
-    const post = await createPost(this.userId, data);
+    const post = await createPost(this.userId!, data);
     return post;
+  }
+
+  async getPost(id: string) {
+    return await getPost(id);
   }
 }

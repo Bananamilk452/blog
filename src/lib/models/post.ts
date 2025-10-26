@@ -63,3 +63,18 @@ export async function createPost(
 
   return post;
 }
+
+export async function getPost(id: string) {
+  const post = await prisma.posts.findUnique({
+    where: { id },
+    include: {
+      user: true,
+    },
+  });
+
+  if (!post) {
+    throw new Error("Post not found");
+  }
+
+  return post;
+}
