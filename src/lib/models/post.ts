@@ -72,9 +72,5 @@ export async function getPost(id: string) {
     },
   });
 
-  if (!post) {
-    throw new Error("Post not found");
-  }
-
   return post;
 }
