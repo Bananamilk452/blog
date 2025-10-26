@@ -31,7 +31,6 @@
     "commander": "^14.0.1",
     "debug": "^4.4.3",
     "dotenv": "^17.2.3",
-    "he": "^1.2.0",
     "install": "^0.13.0",
     "ioredis": "^5.8.1",
     "lucide-react": "^0.546.0",

@@ -7,12 +7,12 @@ export class PostService {
     this.userId = userId;
   }
 
-  async createPost(content: string) {
-    if (content.trim().length === 0) {
+  async createPost(data: { title: string; content: string }) {
+    if (data.content.trim().length === 0) {
       throw new Error("Content cannot be empty");
     }
 
-    const post = await createPost(this.userId, content);
+    const post = await createPost(this.userId, data);
     return post;
   }
 }

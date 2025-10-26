@@ -235,7 +235,7 @@ federation
 federation
   .setFollowersDispatcher(
     "/users/{identifier}/followers",
-    async (ctx, identifier, cursor) => {
+    async (ctx, identifier) => {
       log(`Dispatching followers for identifier: ${identifier}`);
 
       const followers = await prisma.follows.findMany({
@@ -300,7 +300,7 @@ federation.setObjectDispatcher(
       attribution: ctx.getActorUri(values.identifier),
       to: PUBLIC_COLLECTION,
       cc: ctx.getFollowersUri(values.identifier),
-      content: post.content,
+      content: `${post.title}<br /><br />${post.content}`,
       mediaType: "text/html",
       published: Temporal.Instant.from(post.createdAt.toISOString()),
       url: ctx.getObjectUri(Note, values),
