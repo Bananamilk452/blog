@@ -1,10 +1,12 @@
 import { Create, Note } from "@fedify/fedify";
-import he from "he";
 
 import { federation } from "~/federation";
 import { prisma } from "~/lib/prisma";
 
-export async function createPost(userId: string, content: string) {
+export async function createPost(
+  userId: string,
+  data: { title: string; content: string },
+) {
   const mainActor = await prisma.mainActor.findFirst({
     include: { actor: true },
   });
@@ -27,7 +29,8 @@ export async function createPost(userId: string, content: string) {
         uri: "https://localhost/",
         userId,
         actorId: mainActor.actor.id,
-        content: he.encode(content),
+        title: data.title,
+        content: data.content,
       },
     });
 

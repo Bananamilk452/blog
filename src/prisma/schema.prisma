@@ -66,6 +66,7 @@ model Posts {
   userId    String
   actor     Actor    @relation(fields: [actorId], references: [id], onDelete: Cascade)
   actorId   String
+  title     String
   content   String
   url       String?
   createdAt DateTime @default(now())
