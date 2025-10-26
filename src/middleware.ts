@@ -1,13 +1,33 @@
 import { fedifyWith } from "@fedify/next";
+import { headers } from "next/headers";
+import { NextResponse } from "next/server";
 
 import { federation } from "./federation";
+import { auth } from "./lib/auth";
 
-export default fedifyWith(federation)();
+export default fedifyWith(federation)(async (req) => {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+  const url = new URL(req.url);
+
+  // /dashboard로 시작하는 URL은 인증이 필요
+  if (url.pathname.startsWith("/dashboard")) {
+    if (!session) {
+      return NextResponse.redirect(
+        new URL(`/sign-in?redirectTo=${url.pathname}`, req.url),
+      );
+    }
+  }
+});
 
 // This config must be defined on `middleware.ts`.
 export const config = {
   runtime: "nodejs",
   matcher: [
+    {
+      source: "/dashboard/:path*",
+    },
     {
       source: "/:path*",
       has: [
