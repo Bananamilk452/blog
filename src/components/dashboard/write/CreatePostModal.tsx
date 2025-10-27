@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -33,8 +33,6 @@ import {
   CreatePostForm,
   CreatePostFormSchema,
 } from "~/types/zod/CreatePostFormSchema";
-
-import type { ComboboxOption } from "~/components/ui/combobox";
 
 interface CreatePostModalProps {
   title: string;
