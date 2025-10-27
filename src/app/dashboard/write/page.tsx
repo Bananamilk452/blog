@@ -2,27 +2,23 @@
 
 import "@blocknote/core/fonts/inter.css";
 
-import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/shadcn";
 
 import "@blocknote/shadcn/style.css";
 
-import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { toast } from "sonner";
 
 import { CreatePostModal } from "~/components/dashboard/write/CreatePostModal";
-import { Spinner } from "~/components/Spinner";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { createPost as createPostAction } from "~/lib/actions/post";
+import { useEditor } from "~/hooks/useEditor";
 
 export default function DashboardWritePage() {
   const [title, setTitle] = useState("");
   const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
 
-  const editor = useCreateBlockNote();
+  const editor = useEditor();
 
   const isSaveDisabled = title.trim() === "";
 
@@ -41,7 +37,7 @@ export default function DashboardWritePage() {
         <hr className="m-4 border-gray-600" />
 
         <BlockNoteView
-          className="*:bg-secondary! min-h-0 grow overflow-auto *:h-full"
+          className="*:bg-secondary! min-h-0 grow overflow-auto"
           editor={editor}
         />
       </div>
