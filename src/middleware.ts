@@ -17,6 +17,11 @@ export default fedifyWith(federation)(async (req) => {
       return NextResponse.redirect(
         new URL(`/sign-in?redirectTo=${url.pathname}`, req.url),
       );
+    } else if (session.user.role !== "admin") {
+      return Response.json(
+        { message: "관리자 권한이 필요합니다." },
+        { status: 403 },
+      );
     }
   }
 });
