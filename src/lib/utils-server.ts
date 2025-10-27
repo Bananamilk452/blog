@@ -16,6 +16,22 @@ export async function getValidSession() {
   return session;
 }
 
+export async function getValidAdminSession() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session || !session.user) {
+    throw new Error("Not logged in");
+  }
+
+  if (session.user.role !== "admin") {
+    throw new Error("Not authorized");
+  }
+
+  return session;
+}
+
 export async function getOptionalSession() {
   const session = await auth.api.getSession({
     headers: await headers(),
