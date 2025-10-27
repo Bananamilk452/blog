@@ -5,7 +5,7 @@ import { prisma } from "~/lib/prisma";
 
 export async function createPost(
   userId: string,
-  data: { title: string; content: string; state: string },
+  data: { title: string; content: string; state: string; category: string },
 ) {
   const mainActor = await prisma.mainActor.findFirst({
     include: { actor: true },
@@ -23,6 +23,12 @@ export async function createPost(
   );
 
   const post = await prisma.$transaction(async (tx) => {
+    const category = await tx.category.upsert({
+      where: { name: data.category },
+      update: {},
+      create: { name: data.category },
+    });
+
     const post = await tx.posts.create({
       data: {
         // 임시 URI, 실제로는 federation이 생성한 URI로 업데이트할 예정입니다.
@@ -32,6 +38,7 @@ export async function createPost(
         title: data.title,
         content: data.content,
         state: data.state,
+        categoryId: category.id,
       },
     });
 
@@ -72,6 +79,7 @@ export async function getPost(id: string, userId?: string) {
     where: { id },
     include: {
       user: true,
+      category: true,
     },
   });
 
@@ -83,5 +91,13 @@ export async function getPost(id: string, userId?: string) {
     return post;
   }
 
+  if (post.state === "draft" && post.userId === userId) {
+    return post;
+  }
+
   return null;
+}
+
+export async function getCategories() {
+  return await prisma.category.findMany();
 }

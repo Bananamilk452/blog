@@ -9,7 +9,12 @@ export class PostService {
   }
 
   @requireUserId
-  async createPost(data: { title: string; content: string; state: string }) {
+  async createPost(data: {
+    title: string;
+    content: string;
+    state: string;
+    category: string;
+  }) {
     if (data.content.trim().length === 0) {
       throw new Error("Content cannot be empty");
     }
