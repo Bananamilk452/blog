@@ -31,15 +31,20 @@ export function CreatePostModal({
   const router = useRouter();
 
   const { mutate: createPost, status: createPostStatus } = useMutation({
-    mutationFn: () => {
-      return createPostAction({ title, content });
+    mutationFn: (data: { title: string; content: string; state: string }) => {
+      return createPostAction(data);
     },
-    onSuccess: (data) => {
-      toast.success("포스트가 성공적으로 작성되었습니다.");
-      router.push(`/post/${data.id}`);
+    onSuccess: (data, variables) => {
+      if (variables.state === "published") {
+        toast.success("포스트가 성공적으로 작성되었습니다.");
+        router.push(`/post/${data.id}`);
+      } else if (variables.state === "draft") {
+        toast.success("포스트가 임시 저장되었습니다.");
+        router.push("/dashboard");
+      }
     },
     onError: (error) => {
-      toast.error("포스트 작성에 실패했습니다. 다시 시도해주세요.");
+      toast.error("포스트 처리에 실패했습니다. 다시 시도해주세요.");
       console.error(error);
     },
   });
@@ -56,19 +61,19 @@ export function CreatePostModal({
           {createPostStatus === "pending" && <Spinner className="mr-2" />}
           <Button
             type="submit"
-            onClick={() => createPost()}
+            onClick={() => createPost({ title, content, state: "published" })}
             disabled={createPostStatus === "pending"}
           >
             작성
           </Button>
-          {/* <Button
+          <Button
             variant="white"
             type="submit"
-            onClick={() => createPost()}
+            onClick={() => createPost({ title, content, state: "draft" })}
             disabled={createPostStatus === "pending"}
           >
             임시 저장
-          </Button> */}
+          </Button>
           <Button
             variant="outline"
             type="button"
