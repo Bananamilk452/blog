@@ -5,7 +5,7 @@ import { prisma } from "~/lib/prisma";
 
 export async function createPost(
   userId: string,
-  data: { title: string; content: string },
+  data: { title: string; content: string; state: string },
 ) {
   const mainActor = await prisma.mainActor.findFirst({
     include: { actor: true },
@@ -31,6 +31,7 @@ export async function createPost(
         actorId: mainActor.actor.id,
         title: data.title,
         content: data.content,
+        state: data.state,
       },
     });
 
@@ -47,24 +48,26 @@ export async function createPost(
     return updatedPost;
   });
 
-  const noteArgs = { identifier: username, id: post.id.toString() };
-  const note = await ctx.getObject(Note, noteArgs);
-  await ctx.sendActivity(
-    { identifier: username },
-    "followers",
-    new Create({
-      id: new URL("#activity", note?.id ?? undefined),
-      object: note,
-      actors: note?.attributionIds,
-      tos: note?.toIds,
-      ccs: note?.ccIds,
-    }),
-  );
+  if (post.state === "published") {
+    const noteArgs = { identifier: username, id: post.id.toString() };
+    const note = await ctx.getObject(Note, noteArgs);
+    await ctx.sendActivity(
+      { identifier: username },
+      "followers",
+      new Create({
+        id: new URL("#activity", note?.id ?? undefined),
+        object: note,
+        actors: note?.attributionIds,
+        tos: note?.toIds,
+        ccs: note?.ccIds,
+      }),
+    );
+  }
 
   return post;
 }
 
-export async function getPost(id: string) {
+export async function getPost(id: string, userId?: string) {
   const post = await prisma.posts.findUnique({
     where: { id },
     include: {
@@ -72,5 +75,13 @@ export async function getPost(id: string) {
     },
   });
 
-  return post;
+  if (!post) {
+    return null;
+  }
+
+  if (post.state === "published") {
+    return post;
+  }
+
+  return null;
 }

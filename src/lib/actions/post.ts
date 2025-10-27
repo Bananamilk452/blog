@@ -3,7 +3,7 @@
 import { PostService } from "../services/post";
 import { getOptionalSession, getValidSession } from "../utils-server";
 
-export async function createPost(data: { title: string; content: string }) {
+export async function createPost(data: { title: string; content: string; state: string }) {
   const session = await getValidSession();
 
   const postService = new PostService(session.user.id);

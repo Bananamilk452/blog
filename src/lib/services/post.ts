@@ -9,7 +9,7 @@ export class PostService {
   }
 
   @requireUserId
-  async createPost(data: { title: string; content: string }) {
+  async createPost(data: { title: string; content: string; state: string }) {
     if (data.content.trim().length === 0) {
       throw new Error("Content cannot be empty");
     }
@@ -19,6 +19,6 @@ export class PostService {
   }
 
   async getPost(id: string) {
-    return await getPost(id);
+    return await getPost(id, this.userId);
   }
 }
