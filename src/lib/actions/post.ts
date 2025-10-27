@@ -1,10 +1,14 @@
 "use server";
 
 import { PostService } from "../services/post";
-import { getOptionalSession, getValidSession } from "../utils-server";
+import { getOptionalSession, getValidAdminSession } from "../utils-server";
 
-export async function createPost(data: { title: string; content: string; state: string }) {
-  const session = await getValidSession();
+export async function createPost(data: {
+  title: string;
+  content: string;
+  state: string;
+}) {
+  const session = await getValidAdminSession();
 
   const postService = new PostService(session.user.id);
 
