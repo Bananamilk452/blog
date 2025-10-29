@@ -1,6 +1,5 @@
 "use server";
 
-import { getCategories as getCategoriesFromModel } from "../models/post";
 import { PostService } from "../services/post";
 import { getOptionalSession, getValidAdminSession } from "../utils-server";
 
@@ -26,5 +25,7 @@ export async function getPost(id: string) {
 }
 
 export async function getCategories() {
-  return await getCategoriesFromModel();
+  const postService = new PostService();
+
+  return await postService.getCategories();
 }
