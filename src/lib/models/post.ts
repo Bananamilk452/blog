@@ -98,6 +98,33 @@ export async function getPost(id: string, userId?: string) {
   return null;
 }
 
+export async function getPosts(options?: {
+  take?: number;
+  skip?: number;
+  include?: { draft?: boolean };
+}) {
+  const take = options?.take ?? 10;
+  const skip = options?.skip ?? 0;
+  const includeDraft = options?.include?.draft ?? false;
+
+  const posts = await prisma.posts.findMany({
+    where: includeDraft ? {} : { state: "published" },
+    orderBy: { createdAt: "desc" },
+    take,
+    skip,
+    include: {
+      user: true,
+      category: true,
+    },
+  });
+
+  const count = await prisma.posts.count({
+    where: includeDraft ? {} : { state: "published" },
+  });
+
+  return { records: posts, total: count };
+}
+
 export async function getCategories() {
   return await prisma.category.findMany();
 }
