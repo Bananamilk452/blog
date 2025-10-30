@@ -9,6 +9,7 @@ export async function createPost(data: {
   content: string;
   state: string;
   category: string;
+  slug: string;
 }) {
   const session = await getValidAdminSession();
 

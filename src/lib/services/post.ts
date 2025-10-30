@@ -14,6 +14,7 @@ export class PostService {
     content: string;
     state: string;
     category: string;
+    slug: string;
   }) {
     if (data.content.trim().length === 0) {
       throw new Error("Content cannot be empty");

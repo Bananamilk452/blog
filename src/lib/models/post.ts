@@ -5,7 +5,7 @@ import { prisma } from "~/lib/prisma";
 
 export async function createPost(
   userId: string,
-  data: { title: string; content: string; state: string; category: string },
+  data: { title: string; content: string; state: string; category: string, slug: string },
 ) {
   const mainActor = await prisma.mainActor.findFirst({
     include: { actor: true },
@@ -39,6 +39,7 @@ export async function createPost(
         content: data.content,
         state: data.state,
         categoryId: category.id,
+        slug: data.slug,
       },
     });
 
