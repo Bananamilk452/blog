@@ -74,6 +74,7 @@ model Posts {
   updatedAt  DateTime  @default(now()) @updatedAt
   categoryId String?
   category   Category? @relation(fields: [categoryId], references: [id])
+  slug       String    @unique
 
   @@map("posts")
 }
