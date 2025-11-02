@@ -1,6 +1,6 @@
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 
-import { getPost } from "~/lib/actions/post";
+import { getPostBySlug } from "~/lib/actions/post";
 import { getQueryClient } from "~/lib/getQueryClient";
 
 import { PostPage } from "./PostPage";
@@ -8,19 +8,19 @@ import { PostPage } from "./PostPage";
 export default async function PostIdPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }) {
-  const { id } = await params;
+  const { slug } = await params;
   const queryClient = getQueryClient();
 
   queryClient.prefetchQuery({
-    queryKey: ["post", id] as const,
-    queryFn: () => getPost(id),
+    queryKey: ["post", slug] as const,
+    queryFn: () => getPostBySlug(slug),
   });
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <PostPage id={id} />
+      <PostPage slug={slug} />
     </HydrationBoundary>
   );
 }

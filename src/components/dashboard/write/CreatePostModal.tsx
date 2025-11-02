@@ -94,7 +94,7 @@ export function CreatePostModal({
     onSuccess: (data, variables) => {
       if (variables.state === "published") {
         toast.success("포스트가 성공적으로 작성되었습니다.");
-        router.push(`/post/${data.id}`);
+        router.push(`/post/${data.slug}`);
       } else if (variables.state === "draft") {
         toast.success("포스트가 임시 저장되었습니다.");
         router.push("/dashboard");

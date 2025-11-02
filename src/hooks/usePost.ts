@@ -3,12 +3,12 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { notFound } from "next/navigation";
 
-import { getPost } from "~/lib/actions/post";
+import { getPostBySlug } from "~/lib/actions/post";
 
 export function usePost(id: string) {
   const { data, status } = useSuspenseQuery({
     queryKey: ["post", id] as const,
-    queryFn: () => getPost(id),
+    queryFn: () => getPostBySlug(id),
     select: (post) => {
       if (!post) {
         notFound();
