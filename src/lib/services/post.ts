@@ -1,4 +1,10 @@
-import { createPost, getPost, getPostBySlug } from "~/lib/models/post";
+import {
+  createPost,
+  getCategories,
+  getPost,
+  getPostBySlug,
+  getPosts,
+} from "~/lib/models/post";
 import { requireUserId } from "~/lib/utils-server";
 
 export class PostService {
@@ -30,5 +36,20 @@ export class PostService {
 
   async getPostBySlug(slug: string) {
     return await getPostBySlug(slug, this.userId);
+  }
+
+  async getPosts(options?: {
+    page?: number;
+    limit?: number;
+    include?: { draft?: boolean };
+  }) {
+    const take = options?.limit ?? 10;
+    const skip = options?.page ? (options.page - 1) * take : 0;
+
+    return await getPosts({ ...options, skip, take });
+  }
+
+  async getCategories() {
+    return await getCategories();
   }
 }

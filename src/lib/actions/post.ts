@@ -1,6 +1,5 @@
 "use server";
 
-import { getCategories as getCategoriesFromModel } from "../models/post";
 import { PostService } from "../services/post";
 import { getOptionalSession, getValidAdminSession } from "../utils-server";
 
@@ -34,6 +33,22 @@ export async function getPostBySlug(slug: string) {
   return await postService.getPostBySlug(slug);
 }
 
+export async function getPosts(
+  options: Parameters<typeof PostService.prototype.getPosts>[0],
+) {
+  const session = await getOptionalSession();
+
+  if (session?.user.role !== "admin" && options?.include?.draft) {
+    throw new Error("Unauthorized");
+  }
+
+  const postService = new PostService(session?.user.id);
+
+  return await postService.getPosts(options);
+}
+
 export async function getCategories() {
-  return await getCategoriesFromModel();
+  const postService = new PostService();
+
+  return await postService.getCategories();
 }
