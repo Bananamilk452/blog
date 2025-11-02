@@ -1,24 +1,28 @@
 "use client";
 
-import "@blocknote/core/fonts/inter.css";
-
-import { BlockNoteView } from "@blocknote/shadcn";
-
-import "@blocknote/shadcn/style.css";
-
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { BackButton } from "~/components/BackButton";
 import { CreatePostModal } from "~/components/dashboard/write/CreatePostModal";
+import { Editor } from "~/components/dashboard/write/DynamicEditor";
+import {
+  EditorProvider,
+  useEditorContext,
+} from "~/components/providers/EditorProvider";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { useEditor } from "~/hooks/useEditor";
 
 export default function DashboardWritePage() {
-  const [title, setTitle] = useState("");
-  const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
+  return (
+    <EditorProvider>
+      <WriteEditor />
+    </EditorProvider>
+  );
+}
 
-  const editor = useEditor();
+function WriteEditor() {
+  const { title, setTitle, content } = useEditorContext();
+  const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
 
   const isSaveDisabled = title.trim() === "";
 
@@ -36,13 +40,10 @@ export default function DashboardWritePage() {
 
         <hr className="m-4 border-gray-600" />
 
-        <BlockNoteView
-          className="*:bg-secondary! min-h-0 grow overflow-auto"
-          editor={editor}
-        />
+        <Editor />
       </div>
       <div className="bg-accent flex justify-between p-4">
-        <BackButton />
+        <BackButton>뒤로가기</BackButton>
         <div className="flex items-center gap-4">
           <Button
             disabled={isSaveDisabled}
@@ -52,30 +53,12 @@ export default function DashboardWritePage() {
           </Button>
           <CreatePostModal
             title={title}
-            content={editor.blocksToFullHTML(editor.document)}
+            content={content}
             open={isCreatePostModalOpen}
             setOpen={setIsCreatePostModalOpen}
           />
         </div>
       </div>
     </div>
-  );
-}
-
-function BackButton() {
-  const router = useRouter();
-
-  function onGoBack() {
-    if (history.length > 2) {
-      router.back();
-    } else {
-      router.push("/");
-    }
-  }
-
-  return (
-    <Button variant="white" onClick={onGoBack}>
-      나가기
-    </Button>
   );
 }

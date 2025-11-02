@@ -2,8 +2,8 @@
 
 import { usePost } from "~/hooks/usePost";
 
-export function PostPage({ id }: { id: string }) {
-  const { data: post } = usePost(id);
+export function PostPage({ slug }: { slug: string }) {
+  const { data: post } = usePost(slug);
 
   return (
     <div className="p-4">

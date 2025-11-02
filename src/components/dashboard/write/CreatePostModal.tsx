@@ -25,6 +25,7 @@ import {
   FormLabel,
   FormMessage,
 } from "~/components/ui/form";
+import { Input } from "~/components/ui/input";
 import {
   createPost as createPostAction,
   getCategories,
@@ -55,6 +56,7 @@ export function CreatePostModal({
       title,
       content,
       category: "",
+      slug: "",
     },
   });
 
@@ -64,6 +66,7 @@ export function CreatePostModal({
         title,
         content,
         category: form.getValues("category") || "",
+        slug: form.getValues("slug") || "",
       });
     }
   }, [title, content, form]);
@@ -84,13 +87,14 @@ export function CreatePostModal({
       content: string;
       state: string;
       category: string;
+      slug: string;
     }) => {
       return createPostAction(data);
     },
     onSuccess: (data, variables) => {
       if (variables.state === "published") {
         toast.success("포스트가 성공적으로 작성되었습니다.");
-        router.push(`/post/${data.id}`);
+        router.push(`/post/${data.slug}`);
       } else if (variables.state === "draft") {
         toast.success("포스트가 임시 저장되었습니다.");
         router.push("/dashboard");
@@ -130,6 +134,30 @@ export function CreatePostModal({
                         placeholder="카테고리를 선택 또는 입력하세요..."
                         searchPlaceholder="카테고리 검색..."
                         emptyPlaceholder="일치하는 카테고리가 없습니다."
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="slug"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>슬러그</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="게시물 슬러그..."
+                        {...field}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          const sanitizedValue = value
+                            .toLowerCase()
+                            .replace(/\s+/g, "-")
+                            .replace(/[^a-z0-9-]/g, "");
+                          field.onChange(sanitizedValue);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />

@@ -2,6 +2,7 @@ import {
   createPost,
   getCategories,
   getPost,
+  getPostBySlug,
   getPosts,
 } from "~/lib/models/post";
 import { requireUserId } from "~/lib/utils-server";
@@ -19,6 +20,7 @@ export class PostService {
     content: string;
     state: string;
     category: string;
+    slug: string;
   }) {
     if (data.content.trim().length === 0) {
       throw new Error("Content cannot be empty");
@@ -30,6 +32,10 @@ export class PostService {
 
   async getPost(id: string) {
     return await getPost(id, this.userId);
+  }
+
+  async getPostBySlug(slug: string) {
+    return await getPostBySlug(slug, this.userId);
   }
 
   async getPosts(options?: {

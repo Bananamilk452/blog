@@ -8,6 +8,7 @@ export async function createPost(data: {
   content: string;
   state: string;
   category: string;
+  slug: string;
 }) {
   const session = await getValidAdminSession();
 
@@ -22,6 +23,14 @@ export async function getPost(id: string) {
   const postService = new PostService(session?.user.id);
 
   return await postService.getPost(id);
+}
+
+export async function getPostBySlug(slug: string) {
+  const session = await getOptionalSession();
+
+  const postService = new PostService(session?.user.id);
+
+  return await postService.getPostBySlug(slug);
 }
 
 export async function getPosts(
