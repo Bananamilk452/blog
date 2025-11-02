@@ -1,4 +1,4 @@
-import { createPost, getPost } from "~/lib/models/post";
+import { createPost, getPost, getPostBySlug } from "~/lib/models/post";
 import { requireUserId } from "~/lib/utils-server";
 
 export class PostService {
@@ -26,5 +26,9 @@ export class PostService {
 
   async getPost(id: string) {
     return await getPost(id, this.userId);
+  }
+
+  async getPostBySlug(slug: string) {
+    return await getPostBySlug(slug, this.userId);
   }
 }

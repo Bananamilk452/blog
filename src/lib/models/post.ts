@@ -5,7 +5,13 @@ import { prisma } from "~/lib/prisma";
 
 export async function createPost(
   userId: string,
-  data: { title: string; content: string; state: string; category: string, slug: string },
+  data: {
+    title: string;
+    content: string;
+    state: string;
+    category: string;
+    slug: string;
+  },
 ) {
   const mainActor = await prisma.mainActor.findFirst({
     include: { actor: true },
@@ -78,6 +84,30 @@ export async function createPost(
 export async function getPost(id: string, userId?: string) {
   const post = await prisma.posts.findUnique({
     where: { id },
+    include: {
+      user: true,
+      category: true,
+    },
+  });
+
+  if (!post) {
+    return null;
+  }
+
+  if (post.state === "published") {
+    return post;
+  }
+
+  if (post.state === "draft" && post.userId === userId) {
+    return post;
+  }
+
+  return null;
+}
+
+export async function getPostBySlug(slug: string, userId?: string) {
+  const post = await prisma.posts.findUnique({
+    where: { slug },
     include: {
       user: true,
       category: true,

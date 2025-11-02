@@ -26,6 +26,14 @@ export async function getPost(id: string) {
   return await postService.getPost(id);
 }
 
+export async function getPostBySlug(slug: string) {
+  const session = await getOptionalSession();
+
+  const postService = new PostService(session?.user.id);
+
+  return await postService.getPostBySlug(slug);
+}
+
 export async function getCategories() {
   return await getCategoriesFromModel();
 }
