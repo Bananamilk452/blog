@@ -5,7 +5,6 @@ import {
   exportJwk,
   Follow,
   generateCryptoKeyPair,
-  getActorHandle,
   importJwk,
   Note,
   Person,
@@ -20,6 +19,7 @@ import { Redis } from "ioredis";
 
 import { Keys as Key } from "./generated/prisma";
 import { prisma } from "./lib/prisma";
+import { upsertActor } from "./lib/utils-federation";
 
 const log = debug("blog:federation");
 
@@ -155,26 +155,7 @@ federation
       return;
     }
 
-    const followerId = (
-      await prisma.actor.upsert({
-        where: { uri: follower.id.href },
-        create: {
-          uri: follower.id.href,
-          handle: await getActorHandle(follower),
-          name: follower.name?.toString(),
-          inboxUrl: follower.inboxId.href,
-          sharedInboxUrl: follower.endpoints?.sharedInbox?.href,
-          url: follower.url?.href?.toString(),
-        },
-        update: {
-          handle: await getActorHandle(follower),
-          name: follower.name?.toString(),
-          inboxUrl: follower.inboxId.href,
-          sharedInboxUrl: follower.endpoints?.sharedInbox?.href,
-          url: follower.url?.href?.toString(),
-        },
-      })
-    ).id;
+    const followerId = (await upsertActor(follower)).id;
 
     await prisma.follows.create({
       data: {

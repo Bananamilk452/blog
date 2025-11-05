@@ -7,7 +7,7 @@ export class S3Service {
     this.userId = userId;
   }
 
-  async uploadFile(file: File) {
-    return await uploadFile(file);
+  async uploadFile(file: File, path: string) {
+    return await uploadFile(file, path);
   }
 }
