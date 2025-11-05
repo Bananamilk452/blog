@@ -5,6 +5,7 @@ import {
   exportJwk,
   Follow,
   generateCryptoKeyPair,
+  Image,
   importJwk,
   Note,
   Person,
@@ -60,7 +61,8 @@ federation
     return new Person({
       id: ctx.getActorUri(identifier),
       preferredUsername: identifier,
-      name: user.name,
+      name: user.actor?.name,
+      summary: user.actor?.summary,
       inbox: ctx.getInboxUri(identifier),
       endpoints: new Endpoints({
         sharedInbox: ctx.getInboxUri(),
@@ -69,12 +71,16 @@ federation
       publicKey: keys[0].cryptographicKey,
       assertionMethods: keys.map((k) => k.multikey),
       followers: ctx.getFollowersUri(identifier),
-      icon: user.actor?.avatar?.url
-        ? new URL(user.actor?.avatar?.url)
-        : undefined,
-      image: user.actor?.banner?.url
-        ? new URL(user.actor?.banner?.url)
-        : undefined,
+      icon: new Image({
+        url: user.actor?.avatar?.url
+          ? new URL(user.actor?.avatar?.url)
+          : undefined,
+      }),
+      image: new Image({
+        url: user.actor?.banner?.url
+          ? new URL(user.actor?.banner?.url)
+          : undefined,
+      }),
     });
   })
   .setKeyPairsDispatcher(async (ctx, identifier) => {

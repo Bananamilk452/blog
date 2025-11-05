@@ -1,4 +1,4 @@
-import { getMainActor } from "../models/actor";
+import { getMainActor, updateMainActor } from "../models/actor";
 
 export class ActorService {
   userId?: string;
@@ -9,5 +9,9 @@ export class ActorService {
 
   getMainActor() {
     return getMainActor();
+  }
+
+  updateMainActor(data: Parameters<typeof updateMainActor>[0]) {
+    return updateMainActor(data);
   }
 }
