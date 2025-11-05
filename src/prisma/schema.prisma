@@ -30,6 +30,7 @@ model Actor {
   follower       Follows[]  @relation("Follower")
   mainActor      MainActor?
   posts          Posts[]
+  avatar         Avatar?
 
   @@map("actor")
 }
@@ -95,6 +96,18 @@ model MainActor {
   updatedAt DateTime @default(now()) @updatedAt
 
   @@map("main_actor")
+}
+
+model Avatar {
+  id          String   @id @default(uuid(7))
+  url         String
+  originalUrl String
+  actor       Actor    @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  actorId     String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  @@map("avatar")
 }
 
 model User {
