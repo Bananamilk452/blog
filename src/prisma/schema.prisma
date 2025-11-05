@@ -108,6 +108,7 @@ model Image {
   originalUrl String
   avatarActor Actor?   @relation("Avatar")
   bannerActor Actor?   @relation("Banner")
+  createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
 
   @@map("image")
