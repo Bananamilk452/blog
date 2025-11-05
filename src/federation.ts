@@ -5,7 +5,7 @@ import {
   exportJwk,
   Follow,
   generateCryptoKeyPair,
-  getActorHandle,
+  Image,
   importJwk,
   Note,
   Person,
@@ -20,6 +20,7 @@ import { Redis } from "ioredis";
 
 import { Keys as Key } from "./generated/prisma";
 import { prisma } from "./lib/prisma";
+import { upsertActor } from "./lib/utils-federation";
 
 const log = debug("blog:federation");
 
@@ -41,7 +42,14 @@ federation
 
     const user = await prisma.user.findFirst({
       where: { username: identifier },
-      include: { actor: true },
+      include: {
+        actor: {
+          include: {
+            avatar: true,
+            banner: true,
+          },
+        },
+      },
     });
 
     if (!user) {
@@ -53,7 +61,8 @@ federation
     return new Person({
       id: ctx.getActorUri(identifier),
       preferredUsername: identifier,
-      name: user.name,
+      name: user.actor?.name,
+      summary: user.actor?.summary,
       inbox: ctx.getInboxUri(identifier),
       endpoints: new Endpoints({
         sharedInbox: ctx.getInboxUri(),
@@ -62,6 +71,16 @@ federation
       publicKey: keys[0].cryptographicKey,
       assertionMethods: keys.map((k) => k.multikey),
       followers: ctx.getFollowersUri(identifier),
+      icon: new Image({
+        url: user.actor?.avatar?.url
+          ? new URL(user.actor?.avatar?.url)
+          : undefined,
+      }),
+      image: new Image({
+        url: user.actor?.banner?.url
+          ? new URL(user.actor?.banner?.url)
+          : undefined,
+      }),
     });
   })
   .setKeyPairsDispatcher(async (ctx, identifier) => {
@@ -155,26 +174,7 @@ federation
       return;
     }
 
-    const followerId = (
-      await prisma.actor.upsert({
-        where: { uri: follower.id.href },
-        create: {
-          uri: follower.id.href,
-          handle: await getActorHandle(follower),
-          name: follower.name?.toString(),
-          inboxUrl: follower.inboxId.href,
-          sharedInboxUrl: follower.endpoints?.sharedInbox?.href,
-          url: follower.url?.href?.toString(),
-        },
-        update: {
-          handle: await getActorHandle(follower),
-          name: follower.name?.toString(),
-          inboxUrl: follower.inboxId.href,
-          sharedInboxUrl: follower.endpoints?.sharedInbox?.href,
-          url: follower.url?.href?.toString(),
-        },
-      })
-    ).id;
+    const followerId = (await upsertActor(follower)).id;
 
     await prisma.follows.create({
       data: {

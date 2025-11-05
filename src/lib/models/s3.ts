@@ -19,18 +19,18 @@ const client = new S3Client({
   },
 });
 
-export async function uploadFile(file: File) {
+export async function uploadFile(file: File, path: string) {
   const buffer = Buffer.from(await file.arrayBuffer());
   const filename = `${file.name}-${Date.now()}.${file.type.split("/")[1]}`;
 
   const command = new PutObjectCommand({
     Bucket: process.env.S3_BUCKET,
-    Key: `medias/${filename}`,
+    Key: `${path}/${filename}`,
     Body: buffer,
     ContentType: file.type,
   });
 
   await client.send(command);
 
-  return `${process.env.S3_PUBLIC_URL}/medias/${filename}`;
+  return `${process.env.S3_PUBLIC_URL}/${path}/${filename}`;
 }

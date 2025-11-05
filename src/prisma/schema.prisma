@@ -25,11 +25,16 @@ model Actor {
   url            String?
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @default(now()) @updatedAt
-  userId         String?
+  userId         String?    @unique
+  summary        String?
   following      Follows[]  @relation("Following")
   follower       Follows[]  @relation("Follower")
   mainActor      MainActor?
   posts          Posts[]
+  avatar         Image?     @relation("Avatar", fields: [avatarId], references: [id])
+  avatarId       String?    @unique
+  banner         Image?     @relation("Banner", fields: [bannerId], references: [id])
+  bannerId       String?    @unique
 
   @@map("actor")
 }
@@ -97,6 +102,18 @@ model MainActor {
   @@map("main_actor")
 }
 
+model Image {
+  id          String   @id @default(uuid(7))
+  url         String
+  originalUrl String
+  avatarActor Actor?   @relation("Avatar")
+  bannerActor Actor?   @relation("Banner")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  @@map("image")
+}
+
 model User {
   id            String    @id
   name          String
@@ -110,7 +127,7 @@ model User {
 
   username        String
   displayUsername String
-  actor           Actor[]
+  actor           Actor?
   keys            Keys[]
   posts           Posts[]
 

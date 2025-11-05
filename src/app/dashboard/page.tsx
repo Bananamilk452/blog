@@ -1,21 +1,29 @@
-import { PostPaginationList } from "~/components/dashboard/PostPaginationList";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+
+import { MainActor } from "~/components/dashboard/MainActor";
+import { PostList } from "~/components/dashboard/PostList";
 import { DefaultLayout } from "~/layouts/default";
+import { getMainActor } from "~/lib/actions/actor";
+import { getQueryClient } from "~/lib/getQueryClient";
 
 export default function DashboardPage() {
+  const queryClient = getQueryClient();
+
+  queryClient.prefetchQuery({
+    queryKey: ["main-actor"],
+    queryFn: () => getMainActor(),
+  });
+
   return (
     <DefaultLayout>
       <div className="flex flex-col gap-6">
         <h1 className="text-3xl font-bold">대시보드</h1>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>글 목록</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <PostPaginationList includeDraft={true} />
-          </CardContent>
-        </Card>
+        <HydrationBoundary state={dehydrate(queryClient)}>
+          <MainActor />
+        </HydrationBoundary>
+
+        <PostList />
       </div>
     </DefaultLayout>
   );

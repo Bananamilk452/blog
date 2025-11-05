@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
 
     return config;
   },
+  images: {
+    remotePatterns: [new URL(`${process.env.S3_PUBLIC_URL}/**`)],
+  },
 };
 
 export default nextConfig;
