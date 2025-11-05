@@ -41,7 +41,14 @@ federation
 
     const user = await prisma.user.findFirst({
       where: { username: identifier },
-      include: { actor: true },
+      include: {
+        actor: {
+          include: {
+            avatar: true,
+            banner: true,
+          },
+        },
+      },
     });
 
     if (!user) {
@@ -62,6 +69,12 @@ federation
       publicKey: keys[0].cryptographicKey,
       assertionMethods: keys.map((k) => k.multikey),
       followers: ctx.getFollowersUri(identifier),
+      icon: user.actor?.avatar?.url
+        ? new URL(user.actor?.avatar?.url)
+        : undefined,
+      image: user.actor?.banner?.url
+        ? new URL(user.actor?.banner?.url)
+        : undefined,
     });
   })
   .setKeyPairsDispatcher(async (ctx, identifier) => {
