@@ -39,7 +39,7 @@ export async function upsertActor(
               type: icon.mediaType?.toString() || "image/jpeg",
             },
           );
-          uploadedUrl = await uploadFile(iconFile, "remote-avatars");
+          uploadedUrl = await uploadFile(iconFile, "remote-contents");
         }
       }
 
