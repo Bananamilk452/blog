@@ -108,6 +108,7 @@ model Image {
   originalUrl String
   avatarActor Actor?   @relation("Avatar")
   bannerActor Actor?   @relation("Banner")
+  user        User?    @relation("UserAvatar")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
 
@@ -119,7 +120,8 @@ model User {
   name          String
   email         String
   emailVerified Boolean   @default(false)
-  image         String?
+  avatar        Image?    @relation("UserAvatar", fields: [avatarId], references: [id])
+  avatarId      String?   @unique
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @default(now()) @updatedAt
   sessions      Session[]
