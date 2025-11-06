@@ -65,23 +65,24 @@ model Follows {
 }
 
 model Posts {
-  id         String    @id @default(uuid(7))
-  uri        String    @unique
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId     String
-  actor      Actor     @relation(fields: [actorId], references: [id], onDelete: Cascade)
-  actorId    String
-  title      String
-  content    String
-  state      String    @default("published")
-  url        String?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @default(now()) @updatedAt
-  categoryId String?
-  category   Category? @relation(fields: [categoryId], references: [id])
-  slug       String?   @unique
-  banner     Image?    @relation("PostBanner", fields: [bannerId], references: [id])
-  bannerId   String?   @unique
+  id          String    @id @default(uuid(7))
+  uri         String    @unique
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  actor       Actor     @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  actorId     String
+  title       String
+  content     String
+  state       String    @default("published")
+  url         String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
+  publishedAt DateTime?
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
+  slug        String?   @unique
+  banner      Image?    @relation("PostBanner", fields: [bannerId], references: [id])
+  bannerId    String?   @unique
 
   @@map("posts")
 }

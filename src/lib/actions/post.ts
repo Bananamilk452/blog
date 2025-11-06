@@ -13,6 +13,17 @@ export async function createPost(
   return await postService.createPost(data);
 }
 
+export async function updatePost(
+  id: string,
+  data: Parameters<typeof PostService.prototype.updatePost>[1],
+) {
+  const session = await getValidAdminSession();
+
+  const postService = new PostService(session.user.id);
+
+  return await postService.updatePost(id, data);
+}
+
 export async function getPost(id: string) {
   const session = await getOptionalSession();
 
