@@ -79,7 +79,9 @@ model Posts {
   updatedAt  DateTime  @default(now()) @updatedAt
   categoryId String?
   category   Category? @relation(fields: [categoryId], references: [id])
-  slug       String    @unique
+  slug       String?   @unique
+  banner     Image?    @relation("PostBanner", fields: [bannerId], references: [id])
+  bannerId   String?   @unique
 
   @@map("posts")
 }
@@ -109,6 +111,7 @@ model Image {
   avatarActor Actor?   @relation("Avatar")
   bannerActor Actor?   @relation("Banner")
   user        User?    @relation("UserAvatar")
+  post        Posts?   @relation("PostBanner")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
 
