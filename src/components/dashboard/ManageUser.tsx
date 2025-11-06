@@ -4,7 +4,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { SquarePenIcon } from "lucide-react";
 import { useState } from "react";
 
-import { getMainActor } from "~/lib/actions/actor";
+import { getUser } from "~/lib/actions/user";
 
 import { Button } from "../ui/button";
 import {
@@ -15,24 +15,30 @@ import {
   CardHeader,
   CardTitle,
 } from "../ui/card";
-import { ActorCard } from "./ActorCard";
-import { UpdateMainActorModal } from "./UpdateMainActorModal";
+import { UpdateUserModal } from "./UpdateUserModal";
+import { UserCard } from "./UserCard";
 
-export function MainActor() {
+export function ManageUser() {
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
 
-  const { data: actor } = useSuspenseQuery({
-    queryKey: ["main-actor"],
-    queryFn: () => getMainActor(),
-    select: (data) => data.actor,
+  const { data: user } = useSuspenseQuery({
+    queryKey: ["user"],
+    queryFn: () => getUser(),
+    select: (data) => {
+      if (!data) {
+        throw new Error("User not found");
+      }
+
+      return data;
+    },
   });
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>메인 액터</CardTitle>
+        <CardTitle>유저 프로필</CardTitle>
         <CardDescription>
-          블로그의 연합우주 계정인 메인 액터를 관리합니다.
+          현재 로그인한 유저의 프로필 정보를 관리합니다.
         </CardDescription>
 
         <CardAction>
@@ -40,17 +46,16 @@ export function MainActor() {
             <SquarePenIcon />
             수정
           </Button>
-
-          <UpdateMainActorModal
+          <UpdateUserModal
             open={isUpdateModalOpen}
             setOpen={setIsUpdateModalOpen}
-            actor={actor}
+            user={user}
           />
         </CardAction>
       </CardHeader>
 
       <CardContent>
-        <ActorCard actor={actor} />
+        <UserCard user={user} />
       </CardContent>
     </Card>
   );
