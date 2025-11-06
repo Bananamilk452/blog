@@ -4,6 +4,7 @@ import "@blocknote/core/fonts/inter.css";
 import "@blocknote/shadcn/style.css";
 
 import { BlockNoteView } from "@blocknote/shadcn";
+import { useEffect } from "react";
 
 import { useEditorContext } from "~/components/providers/EditorProvider";
 import { Input } from "~/components/ui/input";
@@ -12,7 +13,10 @@ import { useEditor } from "~/hooks/useEditor";
 export default function Editor() {
   const editor = useEditor();
   const { title, setTitle, setEditor, setContent } = useEditorContext();
-  setEditor(editor);
+
+  useEffect(() => {
+    setEditor(editor);
+  }, [editor, setEditor]);
 
   editor.onChange(() => {
     const html = editor.blocksToFullHTML(editor.document);
