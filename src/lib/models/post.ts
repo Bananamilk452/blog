@@ -109,7 +109,11 @@ export async function getPostBySlug(slug: string, userId?: string) {
   const post = await prisma.posts.findUnique({
     where: { slug },
     include: {
-      user: true,
+      user: {
+        include: {
+          avatar: true,
+        },
+      },
       category: true,
     },
   });

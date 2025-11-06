@@ -1,9 +1,10 @@
 import Image from "next/image";
+import Link from "next/link";
 
 export function Navbar() {
   return (
     <nav className="bg-accent flex shadow-lg">
-      <div className="mx-auto w-full px-4 py-4 sm:w-2/3 sm:px-8">
+      <div className="mx-auto w-full px-4 py-4 sm:w-1/2 sm:px-8">
         <Logo />
       </div>
     </nav>
@@ -13,16 +14,19 @@ export function Navbar() {
 function Logo() {
   return (
     <div className="flex items-center gap-4 select-none">
-      <Image
+      {/* <Image
         src="/logo.jpg"
         alt="Logo"
-        width={64}
-        height={64}
-        className="size-12 rounded-full sm:size-16"
-      />
-      <p className="font-mono text-2xl font-semibold sm:text-4xl">
+        width={128}
+        height={128}
+        className="size-8 rounded-full sm:size-16"
+      /> */}
+      <Link
+        href="/"
+        className="cursor-pointer font-mono text-2xl font-semibold sm:text-3xl"
+      >
         &lt;seoa.dev /&gt;
-      </p>
+      </Link>
     </div>
   );
 }
