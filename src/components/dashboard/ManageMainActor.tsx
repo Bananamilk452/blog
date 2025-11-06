@@ -18,7 +18,7 @@ import {
 import { ActorCard } from "./ActorCard";
 import { UpdateMainActorModal } from "./UpdateMainActorModal";
 
-export function MainActor() {
+export function ManageMainActor() {
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
 
   const { data: actor } = useSuspenseQuery({

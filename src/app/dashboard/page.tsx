@@ -1,6 +1,6 @@
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 
-import { MainActor } from "~/components/dashboard/MainActor";
+import { ManageMainActor } from "~/components/dashboard/ManageMainActor";
 import { PostList } from "~/components/dashboard/PostList";
 import { DefaultLayout } from "~/layouts/default";
 import { getMainActor } from "~/lib/actions/actor";
@@ -20,7 +20,7 @@ export default function DashboardPage() {
         <h1 className="text-3xl font-bold">대시보드</h1>
 
         <HydrationBoundary state={dehydrate(queryClient)}>
-          <MainActor />
+          <ManageMainActor />
         </HydrationBoundary>
 
         <PostList />
