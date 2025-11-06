@@ -173,6 +173,27 @@ export function CreatePostModal({
                 )}
               />
 
+              <FormField
+                control={form.control}
+                name="banner"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>배너 이미지</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          field.onChange(file || null);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               {/* content 에러 메세지 표시용 */}
               <FormField
                 control={form.control}

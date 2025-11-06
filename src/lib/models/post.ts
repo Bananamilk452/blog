@@ -1,8 +1,10 @@
 import { Create, Note } from "@fedify/fedify";
 
 import { federation } from "~/federation";
-import { Category } from "~/generated/prisma";
+import { Category, Image } from "~/generated/prisma";
 import { prisma } from "~/lib/prisma";
+
+import { uploadFile } from "./s3";
 
 export async function createPost(
   userId: string,
@@ -12,6 +14,7 @@ export async function createPost(
     state: string;
     category?: string;
     slug?: string;
+    banner?: File;
   },
 ) {
   const mainActor = await prisma.mainActor.findFirst({
@@ -31,12 +34,23 @@ export async function createPost(
 
   const post = await prisma.$transaction(async (tx) => {
     let category: Category | null = null;
+    let banner: Image | null = null;
 
     if (data.category) {
       category = await tx.category.upsert({
         where: { name: data.category },
         update: {},
         create: { name: data.category },
+      });
+    }
+
+    if (data.banner) {
+      const bannerUrl = await uploadFile(data.banner, "local-contents");
+      banner = await tx.image.create({
+        data: {
+          url: bannerUrl,
+          originalUrl: bannerUrl,
+        },
       });
     }
 
@@ -51,6 +65,7 @@ export async function createPost(
         state: data.state,
         categoryId: category ? category.id : undefined,
         slug: data.slug,
+        bannerId: banner ? banner.id : undefined,
       },
     });
 
