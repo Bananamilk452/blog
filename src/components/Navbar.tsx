@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 export function Navbar() {
   return (
@@ -13,16 +14,19 @@ export function Navbar() {
 function Logo() {
   return (
     <div className="flex items-center gap-4 select-none">
-      <Image
+      {/* <Image
         src="/logo.jpg"
         alt="Logo"
         width={128}
         height={128}
         className="size-8 rounded-full sm:size-16"
-      />
-      <p className="font-mono text-2xl font-semibold sm:text-3xl">
+      /> */}
+      <Link
+        href="/"
+        className="cursor-pointer font-mono text-2xl font-semibold sm:text-3xl"
+      >
         &lt;seoa.dev /&gt;
-      </p>
+      </Link>
     </div>
   );
 }
