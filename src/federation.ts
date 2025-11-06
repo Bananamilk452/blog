@@ -310,7 +310,11 @@ federation.setObjectDispatcher(
       cc: ctx.getFollowersUri(values.identifier),
       content,
       mediaType: "text/html",
-      published: Temporal.Instant.from(post.createdAt.toISOString()),
+      published: Temporal.Instant.from(
+        post.publishedAt
+          ? post.publishedAt.toISOString()
+          : post.createdAt.toISOString(),
+      ),
       url: ctx.getObjectUri(Note, values),
       attachments: post.banner
         ? [
