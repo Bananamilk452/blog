@@ -60,6 +60,7 @@ export function CreatePostModal({
     },
   });
 
+  // props 변경 시 form 값 업데이트
   useEffect(() => {
     if (title || content) {
       form.reset({
@@ -75,6 +76,7 @@ export function CreatePostModal({
     queryKey: ["categories"],
     queryFn: getCategories,
   });
+
   const categoryOptions = useMemo(() => {
     return categories
       ? categories.map((c) => ({ label: c.name, value: c.name }))
@@ -82,20 +84,14 @@ export function CreatePostModal({
   }, [categories]);
 
   const { mutate: createPost, status: createPostStatus } = useMutation({
-    mutationFn: (data: {
-      title: string;
-      content: string;
-      state: string;
-      category: string;
-      slug: string;
-    }) => {
-      return createPostAction(data);
+    mutationFn: () => {
+      return createPostAction(form.getValues());
     },
-    onSuccess: (data, variables) => {
-      if (variables.state === "published") {
+    onSuccess: (data) => {
+      if (data.state === "published") {
         toast.success("포스트가 성공적으로 작성되었습니다.");
         router.push(`/post/${data.slug}`);
-      } else if (variables.state === "draft") {
+      } else if (data.state === "draft") {
         toast.success("포스트가 임시 저장되었습니다.");
         router.push("/dashboard");
       }
@@ -107,8 +103,20 @@ export function CreatePostModal({
   });
 
   const handleSubmit = (state: "draft" | "published") => {
-    const values = form.getValues();
-    createPost({ ...values, state });
+    form.setValue("state", state);
+
+    if (state === "draft") {
+      // optional 처리를 위해 empty string이면 undefined으로 설정
+      if (form.getValues("category") === "") {
+        form.setValue("category", undefined);
+      }
+      if (form.getValues("slug") === "") {
+        form.setValue("slug", undefined);
+      }
+    }
+
+    // 그 다음 제출
+    form.handleSubmit(() => createPost())();
   };
 
   return (
@@ -164,12 +172,44 @@ export function CreatePostModal({
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="banner"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>배너 이미지</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          field.onChange(file || null);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* content 에러 메세지 표시용 */}
+              <FormField
+                control={form.control}
+                name="content"
+                render={() => (
+                  <FormItem>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
             <DialogFooter>
               {createPostStatus === "pending" && <Spinner className="mr-2" />}
               <Button
                 type="button"
-                onClick={form.handleSubmit(() => handleSubmit("published"))}
+                onClick={() => handleSubmit("published")}
                 disabled={createPostStatus === "pending"}
               >
                 발행
@@ -177,7 +217,7 @@ export function CreatePostModal({
               <Button
                 variant="white"
                 type="button"
-                onClick={form.handleSubmit(() => handleSubmit("draft"))}
+                onClick={() => handleSubmit("draft")}
                 disabled={createPostStatus === "pending"}
               >
                 임시 저장

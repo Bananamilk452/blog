@@ -1,7 +1,10 @@
 import { Create, Note } from "@fedify/fedify";
 
 import { federation } from "~/federation";
+import { Category, Image } from "~/generated/prisma";
 import { prisma } from "~/lib/prisma";
+
+import { uploadFile } from "./s3";
 
 export async function createPost(
   userId: string,
@@ -9,8 +12,9 @@ export async function createPost(
     title: string;
     content: string;
     state: string;
-    category: string;
-    slug: string;
+    category?: string;
+    slug?: string;
+    banner?: File;
   },
 ) {
   const mainActor = await prisma.mainActor.findFirst({
@@ -29,11 +33,26 @@ export async function createPost(
   );
 
   const post = await prisma.$transaction(async (tx) => {
-    const category = await tx.category.upsert({
-      where: { name: data.category },
-      update: {},
-      create: { name: data.category },
-    });
+    let category: Category | null = null;
+    let banner: Image | null = null;
+
+    if (data.category) {
+      category = await tx.category.upsert({
+        where: { name: data.category },
+        update: {},
+        create: { name: data.category },
+      });
+    }
+
+    if (data.banner) {
+      const bannerUrl = await uploadFile(data.banner, "local-contents");
+      banner = await tx.image.create({
+        data: {
+          url: bannerUrl,
+          originalUrl: bannerUrl,
+        },
+      });
+    }
 
     const post = await tx.posts.create({
       data: {
@@ -44,8 +63,9 @@ export async function createPost(
         title: data.title,
         content: data.content,
         state: data.state,
-        categoryId: category.id,
+        categoryId: category ? category.id : undefined,
         slug: data.slug,
+        bannerId: banner ? banner.id : undefined,
       },
     });
 

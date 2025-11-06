@@ -12,6 +12,11 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [new URL(`${process.env.S3_PUBLIC_URL}/**`)],
   },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "5mb",
+    },
+  },
 };
 
 export default nextConfig;

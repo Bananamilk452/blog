@@ -139,12 +139,12 @@ export function UpdateUserModal({ open, setOpen, user }: UpdateUserModalProps) {
                   <FormControl>
                     <Input
                       placeholder="아바타"
-                      {...field}
                       type="file"
-                      value=""
-                      onChange={(event) =>
-                        form.setValue("avatar", event.target.files?.[0])
-                      }
+                      accept="image/*"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        field.onChange(file || undefined);
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
