@@ -1,6 +1,7 @@
 import { Create, Note } from "@fedify/fedify";
 
 import { federation } from "~/federation";
+import { Category } from "~/generated/prisma";
 import { prisma } from "~/lib/prisma";
 
 export async function createPost(
@@ -9,8 +10,8 @@ export async function createPost(
     title: string;
     content: string;
     state: string;
-    category: string;
-    slug: string;
+    category?: string;
+    slug?: string;
   },
 ) {
   const mainActor = await prisma.mainActor.findFirst({
@@ -29,11 +30,15 @@ export async function createPost(
   );
 
   const post = await prisma.$transaction(async (tx) => {
-    const category = await tx.category.upsert({
-      where: { name: data.category },
-      update: {},
-      create: { name: data.category },
-    });
+    let category: Category | null = null;
+
+    if (data.category) {
+      category = await tx.category.upsert({
+        where: { name: data.category },
+        update: {},
+        create: { name: data.category },
+      });
+    }
 
     const post = await tx.posts.create({
       data: {
@@ -44,7 +49,7 @@ export async function createPost(
         title: data.title,
         content: data.content,
         state: data.state,
-        categoryId: category.id,
+        categoryId: category ? category.id : undefined,
         slug: data.slug,
       },
     });

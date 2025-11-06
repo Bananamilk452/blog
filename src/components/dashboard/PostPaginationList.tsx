@@ -43,11 +43,15 @@ export function PostPaginationList({ includeDraft }: PostPaginationListProps) {
               <tr key={post.id} className="*:px-2 *:py-3">
                 <td className="md:w-2/3">
                   <div className="flex gap-2">
-                    <Link className="group" href={`/post/${post.slug}`}>
-                      <span className="font-medium group-hover:underline">
-                        {post.title}
-                      </span>
-                    </Link>
+                    {post.slug ? (
+                      <Link href={`/post/${post.slug}`}>
+                        <span className="font-medium hover:underline">
+                          {post.title}
+                        </span>
+                      </Link>
+                    ) : (
+                      <span className="font-medium">{post.title}</span>
+                    )}
                     {post.state === "draft" && <Badge>임시글</Badge>}
                   </div>
                 </td>
