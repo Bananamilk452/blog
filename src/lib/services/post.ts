@@ -4,6 +4,7 @@ import {
   getPost,
   getPostBySlug,
   getPosts,
+  updatePost,
 } from "~/lib/models/post";
 import { requireUserId } from "~/lib/utils-server";
 
@@ -21,6 +22,23 @@ export class PostService {
     }
 
     const post = await createPost(this.userId!, data);
+    return post;
+  }
+
+  @requireUserId
+  async updatePost(id: string, data: Parameters<typeof updatePost>[1]) {
+    if (data.content.trim().length === 0) {
+      throw new Error("Content cannot be empty");
+    }
+
+    const existingPost = await getPost(id, this.userId);
+    if (!existingPost || existingPost.userId !== this.userId) {
+      throw new Error(
+        "Post not found or you do not have permission to edit it",
+      );
+    }
+
+    const post = await updatePost(id, data);
     return post;
   }
 

@@ -1,4 +1,4 @@
-import { Create, Note } from "@fedify/fedify";
+import { Create, Note, Update } from "@fedify/fedify";
 
 import { federation } from "~/federation";
 import { Category, Image } from "~/generated/prisma";
@@ -66,6 +66,7 @@ export async function createPost(
         categoryId: category ? category.id : undefined,
         slug: data.slug,
         bannerId: banner ? banner.id : undefined,
+        publishedAt: data.state === "published" ? new Date() : null,
       },
     });
 
@@ -89,6 +90,98 @@ export async function createPost(
       { identifier: username },
       "followers",
       new Create({
+        id: new URL("#activity", note?.id ?? undefined),
+        object: note,
+        actors: note?.attributionIds,
+        tos: note?.toIds,
+        ccs: note?.ccIds,
+      }),
+    );
+  }
+
+  return post;
+}
+
+export async function updatePost(
+  userId: string,
+  data: {
+    title: string;
+    content: string;
+    state: string;
+    category?: string;
+    slug?: string;
+    banner?: File;
+  },
+) {
+  const mainActor = await prisma.mainActor.findFirst({
+    include: { actor: true },
+  });
+
+  if (!mainActor) {
+    throw new Error("Main actor is not defined");
+  }
+
+  const username = mainActor.actor.handle;
+
+  const ctx = federation.createContext(
+    new Request(process.env.PUBLIC_URL!),
+    undefined,
+  );
+
+  const existingPost = await prisma.posts.findFirst({
+    where: { userId },
+    include: { category: true, banner: true },
+  });
+
+  if (!existingPost) {
+    throw new Error("Post not found");
+  }
+
+  const post = await prisma.$transaction(async (tx) => {
+    let category: Category | null = null;
+    let banner: Image | null = null;
+
+    if (data.category && data.category !== existingPost?.category?.name) {
+      category = await tx.category.upsert({
+        where: { name: data.category },
+        update: {},
+        create: { name: data.category },
+      });
+    }
+
+    if (data.banner) {
+      const bannerUrl = await uploadFile(data.banner, "local-contents");
+      banner = await tx.image.create({
+        data: {
+          url: bannerUrl,
+          originalUrl: bannerUrl,
+        },
+      });
+    }
+
+    const updatedPost = await tx.posts.update({
+      where: { id: existingPost.id },
+      data: {
+        title: data.title,
+        content: data.content,
+        state: data.state,
+        categoryId: category ? category.id : undefined,
+        slug: data.slug,
+        bannerId: banner ? banner.id : existingPost.bannerId,
+        publishedAt: data.state === "published" ? new Date() : null,
+      },
+    });
+
+    return updatedPost;
+  });
+
+  if (post.state === "published") {
+    const noteArgs = { identifier: username, id: post.id.toString() };
+    const note = await ctx.getObject(Note, noteArgs);
+    await ctx.sendActivity(
+      { identifier: username },
+      "followers",
+      new Update({
         id: new URL("#activity", note?.id ?? undefined),
         object: note,
         actors: note?.attributionIds,
