@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 
+import { Badge } from "~/components/ui/badge";
 import { Image as ImageType, User } from "~/generated/prisma";
 import { usePost } from "~/hooks/usePost";
 
@@ -14,7 +15,11 @@ export function PostPage({ slug }: { slug: string }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-3xl font-bold sm:text-4xl">{post.title}</h1>
+      <h1 className="flex items-center gap-2 text-3xl font-bold sm:text-4xl">
+        {post.title}
+
+        {post.state === "draft" && <Badge>임시글</Badge>}
+      </h1>
 
       {post.user && <UserBadge user={post.user} />}
 
