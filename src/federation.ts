@@ -1,6 +1,7 @@
 import {
   Accept,
   createFederation,
+  Document,
   Endpoints,
   exportJwk,
   Follow,
@@ -15,6 +16,7 @@ import {
 } from "@fedify/fedify";
 import { RedisKvStore, RedisMessageQueue } from "@fedify/redis";
 import { Temporal } from "@js-temporal/polyfill";
+import { format } from "date-fns";
 import debug from "debug";
 import { Redis } from "ioredis";
 
@@ -291,19 +293,32 @@ federation.setObjectDispatcher(
       where: {
         id: values.id,
       },
+      include: {
+        user: true,
+        banner: true,
+      },
     });
 
     if (!post) return null;
+
+    const content = `${post.title}<br /><br />${post.user.name} - 마지막 수정 ${format(post.updatedAt, "yyyy/MM/dd")}<br /><br />${post.content}`;
 
     return new Note({
       id: ctx.getObjectUri(Note, values),
       attribution: ctx.getActorUri(values.identifier),
       to: PUBLIC_COLLECTION,
       cc: ctx.getFollowersUri(values.identifier),
-      content: `${post.title}<br /><br />${post.content}`,
+      content,
       mediaType: "text/html",
       published: Temporal.Instant.from(post.createdAt.toISOString()),
       url: ctx.getObjectUri(Note, values),
+      attachments: post.banner
+        ? [
+            new Document({
+              url: new URL(post.banner.url),
+            }),
+          ]
+        : undefined,
     });
   },
 );
