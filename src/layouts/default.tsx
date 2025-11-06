@@ -11,7 +11,7 @@ export function DefaultLayout({
   return (
     <>
       <Navbar />
-      <main className={cn("mx-auto w-full p-8 sm:w-1/2", className)}>
+      <main className={cn("mx-auto w-full p-8 sm:w-2/3 md:w-1/2", className)}>
         {children}
       </main>
     </>
