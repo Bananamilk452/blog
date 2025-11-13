@@ -18,7 +18,7 @@ export default function Home() {
   return (
     <DefaultLayout>
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <PostList />;
+        <PostList />
       </HydrationBoundary>
     </DefaultLayout>
   );
