@@ -1,6 +1,9 @@
 import "server-only";
 
+import ky from "ky";
 import { headers } from "next/headers";
+
+import { MAX_DOWNLOAD_SIZE } from "~/constants";
 
 import { auth } from "./auth";
 
@@ -59,4 +62,16 @@ export function requireUserId(
     }
     return await originalMethod.apply(this, args);
   };
+}
+
+export async function downloadFile(url: string) {
+  const { headers } = await ky.head(url);
+  const contentLength = headers.get("content-length");
+
+  if (contentLength && Number(contentLength) > MAX_DOWNLOAD_SIZE) {
+    throw new Error("File size exceeds the maximum limit.");
+  }
+
+  const response = await ky.get(url);
+  return await response.arrayBuffer();
 }
