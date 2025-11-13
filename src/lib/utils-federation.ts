@@ -1,9 +1,9 @@
 import { Activity, getActorHandle } from "@fedify/fedify";
 import debug from "debug";
-import ky from "ky";
 
 import { uploadFile } from "./models/s3";
 import { prisma } from "./prisma";
+import { downloadFile } from "./utils-server";
 
 const log = debug("blog:federation");
 
@@ -29,9 +29,7 @@ export async function upsertActor(
       // 아바타 업데이트가 필요하면
       if (a?.avatar?.originalUrl !== icon?.url?.toString()) {
         if (icon && icon.url) {
-          const iconArrayBuffer = await ky
-            .get(icon.url.toString())
-            .arrayBuffer();
+          const iconArrayBuffer = await downloadFile(icon.url.toString());
           const iconFile = new File(
             [iconArrayBuffer],
             icon.url.toString().split("/").pop() || "avatar",
