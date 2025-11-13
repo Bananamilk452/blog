@@ -263,6 +263,7 @@ export async function getPosts(options?: {
     include: {
       user: true,
       category: true,
+      banner: true,
     },
   });
 
