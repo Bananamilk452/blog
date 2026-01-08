@@ -104,6 +104,7 @@ export async function createPost(
 
 export async function updatePost(
   userId: string,
+  postId: string,
   data: {
     title: string;
     content: string;
@@ -129,7 +130,7 @@ export async function updatePost(
   );
 
   const existingPost = await prisma.posts.findFirst({
-    where: { userId },
+    where: { userId, id: postId },
     include: { category: true, banner: true },
   });
 
@@ -227,6 +228,7 @@ export async function getPostBySlug(slug: string, userId?: string) {
           avatar: true,
         },
       },
+      banner: true,
       category: true,
     },
   });

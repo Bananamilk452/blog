@@ -26,7 +26,7 @@ export class PostService {
   }
 
   @requireUserId
-  async updatePost(id: string, data: Parameters<typeof updatePost>[1]) {
+  async updatePost(id: string, data: Parameters<typeof updatePost>[2]) {
     if (data.content.trim().length === 0) {
       throw new Error("Content cannot be empty");
     }
@@ -38,7 +38,7 @@ export class PostService {
       );
     }
 
-    const post = await updatePost(id, data);
+    const post = await updatePost(this.userId, id, data);
     return post;
   }
 
