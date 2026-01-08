@@ -24,6 +24,14 @@ export async function updatePost(
   return await postService.updatePost(id, data);
 }
 
+export async function deletePost(id: string) {
+  const session = await getValidAdminSession();
+
+  const postService = new PostService(session.user.id);
+
+  return await postService.deletePost(id);
+}
+
 export async function getPost(id: string) {
   const session = await getOptionalSession();
 

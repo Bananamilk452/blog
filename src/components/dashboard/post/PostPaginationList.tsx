@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { EllipsisVerticalIcon, SquarePenIcon } from "lucide-react";
+import { EllipsisVerticalIcon, SquarePenIcon, TrashIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -10,17 +10,18 @@ import { PAGE_SIZE, PAGINATION_SIZE } from "~/constants";
 import { Category, Posts, User } from "~/generated/prisma";
 import { getPosts } from "~/lib/actions/post";
 
-import { AppPagination } from "../AppPagination";
-import { Badge } from "../ui/badge";
-import { Button } from "../ui/button";
+import { AppPagination } from "../../AppPagination";
+import { Badge } from "../../ui/badge";
+import { Button } from "../../ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
-import { Skeleton } from "../ui/skeleton";
+} from "../../ui/dropdown-menu";
+import { Skeleton } from "../../ui/skeleton";
+import { DeletePostModal } from "./DeletePostModal";
 
 interface PostPaginationListProps {
   includeDraft?: boolean;
@@ -104,6 +105,7 @@ type Post = Posts & { category: Category | null } & { user: User };
 
 export function PostDropdownMenu({ post }: { post: Post }) {
   const router = useRouter();
+  const [isDeletePostModalOpen, setIsDeletePostModalOpen] = useState(false);
 
   return (
     <DropdownMenu>
@@ -120,8 +122,18 @@ export function PostDropdownMenu({ post }: { post: Post }) {
             <SquarePenIcon />
             수정
           </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setIsDeletePostModalOpen(true)}>
+            <TrashIcon />
+            삭제
+          </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>
+
+      <DeletePostModal
+        post={post}
+        open={isDeletePostModalOpen}
+        setOpen={setIsDeletePostModalOpen}
+      />
     </DropdownMenu>
   );
 }

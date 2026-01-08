@@ -3,8 +3,8 @@
 import { useState } from "react";
 
 import { BackButton } from "~/components/BackButton";
-import { CreatePostModal } from "~/components/dashboard/write/CreatePostModal";
-import { Editor } from "~/components/dashboard/write/DynamicEditor";
+import { Editor } from "~/components/dashboard/editor/DynamicEditor";
+import { CreatePostModal } from "~/components/dashboard/post/CreatePostModal";
 import {
   EditorProvider,
   useEditorContext,
