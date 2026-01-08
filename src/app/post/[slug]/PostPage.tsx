@@ -3,11 +3,11 @@
 import { format } from "date-fns";
 import Image from "next/image";
 
-import { PostDropdownMenu } from "~/components/dashboard/PostPaginationList";
+import { PostDropdownMenu } from "~/components/dashboard/post/PostPaginationList";
 import { Badge } from "~/components/ui/badge";
 import { Image as ImageType, User } from "~/generated/prisma";
 import { usePost } from "~/hooks/usePost";
-import { authClient } from "~/lib/auth-client";
+import { useSession } from "~/hooks/useSession";
 
 type UserWithAvatar = User & {
   avatar: ImageType | null;
@@ -15,7 +15,7 @@ type UserWithAvatar = User & {
 
 export function PostPage({ slug }: { slug: string }) {
   const { data: post } = usePost(slug);
-  const session = authClient.useSession();
+  const session = useSession();
 
   return (
     <div className="flex flex-col gap-4">
@@ -28,7 +28,7 @@ export function PostPage({ slug }: { slug: string }) {
       {post.user && (
         <div className="flex items-center justify-between">
           <UserBadge user={post.user} />
-          {session.data?.user.id === post.user.id && (
+          {session?.data?.user.id === post.user.id && (
             <PostDropdownMenu post={post} />
           )}
         </div>
