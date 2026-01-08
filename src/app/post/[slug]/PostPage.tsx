@@ -1,5 +1,6 @@
 "use client";
 
+import { format } from "date-fns";
 import Image from "next/image";
 
 import { Badge } from "~/components/ui/badge";
@@ -22,6 +23,11 @@ export function PostPage({ slug }: { slug: string }) {
       </h1>
 
       {post.user && <UserBadge user={post.user} />}
+
+      <p className="text-sm">
+        마지막 수정일:{" "}
+        {format(new Date(post.updatedAt), "yyyy년 MM월 dd일 hh:mm")}
+      </p>
 
       <hr className="border-gray-600" />
 
