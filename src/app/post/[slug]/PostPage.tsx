@@ -25,8 +25,19 @@ export function PostPage({ slug }: { slug: string }) {
 
       <hr className="border-gray-600" />
 
+      {post.banner && (
+        <div className="relative min-h-[300px] w-full">
+          <Image
+            fill={true}
+            className="object-contain"
+            src={post.banner.url}
+            alt="포스트 배너 이미지"
+          />
+        </div>
+      )}
+
       <div
-        className="prose dark:prose-invert"
+        className="dark:prose-invert prose"
         dangerouslySetInnerHTML={{ __html: post.content }}
       ></div>
     </div>
