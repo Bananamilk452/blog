@@ -102,7 +102,7 @@ function PostTableSkeleton() {
 
 type Post = Posts & { category: Category | null } & { user: User };
 
-function PostDropdownMenu({ post }: { post: Post }) {
+export function PostDropdownMenu({ post }: { post: Post }) {
   const router = useRouter();
 
   return (
