@@ -15,7 +15,7 @@ export function EditEditor() {
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
 
-  const { title, setTitle, editor } = useEditorContext();
+  const { title, setTitle, editor, content } = useEditorContext();
   const [isUpdatePostModalOpen, setIsUpdatePostModalOpen] = useState(false);
 
   const { data: post } = useSuspenseQuery({
@@ -52,7 +52,10 @@ export function EditEditor() {
             수정
           </Button>
           <UpdatePostModal
-            post={post}
+            post={{
+              ...post,
+              content,
+            }}
             open={isUpdatePostModalOpen}
             setOpen={setIsUpdatePostModalOpen}
           />
