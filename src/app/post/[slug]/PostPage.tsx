@@ -3,9 +3,11 @@
 import { format } from "date-fns";
 import Image from "next/image";
 
+import { PostDropdownMenu } from "~/components/dashboard/PostPaginationList";
 import { Badge } from "~/components/ui/badge";
 import { Image as ImageType, User } from "~/generated/prisma";
 import { usePost } from "~/hooks/usePost";
+import { authClient } from "~/lib/auth-client";
 
 type UserWithAvatar = User & {
   avatar: ImageType | null;
@@ -13,6 +15,7 @@ type UserWithAvatar = User & {
 
 export function PostPage({ slug }: { slug: string }) {
   const { data: post } = usePost(slug);
+  const session = authClient.useSession();
 
   return (
     <div className="flex flex-col gap-4">
@@ -22,7 +25,14 @@ export function PostPage({ slug }: { slug: string }) {
         {post.state === "draft" && <Badge>임시글</Badge>}
       </h1>
 
-      {post.user && <UserBadge user={post.user} />}
+      {post.user && (
+        <div className="flex items-center justify-between">
+          <UserBadge user={post.user} />
+          {session.data?.user.id === post.user.id && (
+            <PostDropdownMenu post={post} />
+          )}
+        </div>
+      )}
 
       <p className="text-sm">
         마지막 수정일:{" "}
