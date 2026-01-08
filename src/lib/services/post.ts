@@ -1,5 +1,6 @@
 import {
   createPost,
+  deletePost,
   getCategories,
   getPost,
   getPostBySlug,
@@ -26,7 +27,7 @@ export class PostService {
   }
 
   @requireUserId
-  async updatePost(id: string, data: Parameters<typeof updatePost>[2]) {
+  async updatePost(id: string, data: Parameters<typeof updatePost>[1]) {
     if (data.content.trim().length === 0) {
       throw new Error("Content cannot be empty");
     }
@@ -38,8 +39,22 @@ export class PostService {
       );
     }
 
-    const post = await updatePost(this.userId, id, data);
+    const post = await updatePost(id, data);
     return post;
+  }
+
+  @requireUserId
+  async deletePost(id: string) {
+    const existingPost = await getPost(id, this.userId);
+    if (!existingPost || existingPost.userId !== this.userId) {
+      throw new Error(
+        "Post not found or you do not have permission to delete it",
+      );
+    }
+
+    const deletedPost = await deletePost(id);
+
+    return deletedPost;
   }
 
   async getPost(id: string) {

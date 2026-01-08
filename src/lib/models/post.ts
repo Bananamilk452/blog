@@ -1,4 +1,4 @@
-import { Create, Note, Update } from "@fedify/fedify";
+import { Create, Delete, Note, Update } from "@fedify/fedify";
 
 import { federation } from "~/federation";
 import { Category, Image } from "~/generated/prisma";
@@ -103,7 +103,6 @@ export async function createPost(
 }
 
 export async function updatePost(
-  userId: string,
   postId: string,
   data: {
     title: string;
@@ -130,7 +129,7 @@ export async function updatePost(
   );
 
   const existingPost = await prisma.posts.findFirst({
-    where: { userId, id: postId },
+    where: { id: postId },
     include: { category: true, banner: true },
   });
 
@@ -173,26 +172,66 @@ export async function updatePost(
       },
     });
 
+    if (post.state === "published") {
+      const noteArgs = { identifier: username, id: post.id.toString() };
+      const note = await ctx.getObject(Note, noteArgs);
+      await ctx.sendActivity(
+        { identifier: username },
+        "followers",
+        new Update({
+          id: new URL("#activity", note?.id ?? undefined),
+          object: note,
+          actors: note?.attributionIds,
+          tos: note?.toIds,
+          ccs: note?.ccIds,
+        }),
+      );
+    }
+
     return updatedPost;
   });
 
-  if (post.state === "published") {
-    const noteArgs = { identifier: username, id: post.id.toString() };
-    const note = await ctx.getObject(Note, noteArgs);
-    await ctx.sendActivity(
-      { identifier: username },
-      "followers",
-      new Update({
-        id: new URL("#activity", note?.id ?? undefined),
-        object: note,
-        actors: note?.attributionIds,
-        tos: note?.toIds,
-        ccs: note?.ccIds,
-      }),
-    );
+  return post;
+}
+
+export async function deletePost(postId: string) {
+  const ctx = federation.createContext(
+    new Request(process.env.PUBLIC_URL!),
+    undefined,
+  );
+  const mainActor = await prisma.mainActor.findFirst({
+    include: { actor: true },
+  });
+
+  if (!mainActor) {
+    throw new Error("Main actor is not defined");
   }
 
-  return post;
+  const username = mainActor.actor.handle;
+
+  const deletedPost = await prisma.$transaction(async (tx) => {
+    const post = await tx.posts.delete({ where: { id: postId } });
+
+    if (post.state === "published") {
+      const noteArgs = { identifier: username, id: post.id.toString() };
+      const note = await ctx.getObject(Note, noteArgs);
+      await ctx.sendActivity(
+        { identifier: username },
+        "followers",
+        new Delete({
+          id: new URL("#activity", note?.id ?? undefined),
+          object: note,
+          actors: note?.attributionIds,
+          tos: note?.toIds,
+          ccs: note?.ccIds,
+        }),
+      );
+    }
+
+    return post;
+  });
+
+  return deletedPost;
 }
 
 export async function getPost(id: string, userId?: string) {
