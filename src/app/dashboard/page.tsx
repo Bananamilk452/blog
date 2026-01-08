@@ -2,7 +2,7 @@ import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 
 import { ManageMainActor } from "~/components/dashboard/ManageMainActor";
 import { ManageUser } from "~/components/dashboard/ManageUser";
-import { PostList } from "~/components/dashboard/PostList";
+import { PostList } from "~/components/dashboard/post/PostList";
 import { DefaultLayout } from "~/layouts/default";
 import { getMainActor } from "~/lib/actions/actor";
 import { getUser } from "~/lib/actions/user";

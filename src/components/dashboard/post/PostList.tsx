@@ -1,14 +1,14 @@
 import { PlusIcon } from "lucide-react";
 import Link from "next/link";
 
-import { Button } from "../ui/button";
+import { Button } from "../../ui/button";
 import {
   Card,
   CardAction,
   CardContent,
   CardHeader,
   CardTitle,
-} from "../ui/card";
+} from "../../ui/card";
 import { PostPaginationList } from "./PostPaginationList";
 
 export function PostList() {
