@@ -31,6 +31,7 @@ model Actor {
   follower       Follows[]  @relation("Follower")
   mainActor      MainActor?
   posts          Posts[]
+comments       Comment[]
   avatar         Image?     @relation("Avatar", fields: [avatarId], references: [id])
   avatarId       String?    @unique
   banner         Image?     @relation("Banner", fields: [bannerId], references: [id])
@@ -83,6 +84,7 @@ model Posts {
   slug        String?   @unique
   banner      Image?    @relation("PostBanner", fields: [bannerId], references: [id])
   bannerId    String?   @unique
+  comments    Comment[]
 
   @@map("posts")
 }
@@ -192,4 +194,22 @@ model Verification {
   updatedAt  DateTime @default(now()) @updatedAt
 
   @@map("verification")
+}
+
+model Comment {
+  id        String    @id @default(uuid(7))
+  uri       String    @unique
+  actorId   String
+  actor     Actor     @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  postId    String
+  post      Posts     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parentId  String?
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[] @relation("CommentReplies")
+  content   String
+  url       String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now()) @updatedAt
+
+  @@map("comments")
 }
