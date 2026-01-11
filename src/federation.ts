@@ -2,6 +2,7 @@ import {
   Accept,
   Create,
   createFederation,
+  Delete,
   Document,
   Endpoints,
   exportJwk,
@@ -290,6 +291,38 @@ federation
     });
 
     log(`Saved comment: ${object.id.href}`);
+  })
+  .on(Delete, async (ctx, del) => {
+    log(`Received Delete activity: ${del.id?.href}`);
+
+    const objectId = del.objectId;
+    if (objectId == null) {
+      log("The Delete object does not have an objectId:", del);
+      return;
+    }
+
+    const comment = await prisma.comment.findFirst({
+      where: { uri: objectId.href },
+      include: { actor: true },
+    });
+
+    if (!comment) {
+      log(`Comment not found for deletion: ${objectId.href}`);
+      return;
+    }
+
+    if (del.actorId?.href !== comment.actor.uri) {
+      log(
+        `Unauthorized delete attempt. Request actor: ${del.actorId?.href}, Comment actor: ${comment.actor.uri}`,
+      );
+      return;
+    }
+
+    await prisma.comment.delete({
+      where: { id: comment.id },
+    });
+
+    log(`Deleted comment: ${comment.id}`);
   });
 
 federation
