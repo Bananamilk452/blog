@@ -25,7 +25,7 @@ export async function createPost(
     throw new Error("Main actor is not defined");
   }
 
-  const username = mainActor.actor.handle;
+  const username = mainActor.actor.username;
 
   const ctx = federation.createContext(
     new Request(process.env.PUBLIC_URL!),
@@ -84,7 +84,7 @@ export async function createPost(
   });
 
   if (post.state === "published") {
-    const noteArgs = { identifier: username, id: post.id.toString() };
+    const noteArgs = { identifier: username, id: post.id };
     const note = await ctx.getObject(Note, noteArgs);
     await ctx.sendActivity(
       { identifier: username },
@@ -121,7 +121,7 @@ export async function updatePost(
     throw new Error("Main actor is not defined");
   }
 
-  const username = mainActor.actor.handle;
+  const username = mainActor.actor.username;
 
   const ctx = federation.createContext(
     new Request(process.env.PUBLIC_URL!),
@@ -172,25 +172,24 @@ export async function updatePost(
       },
     });
 
-    if (post.state === "published") {
-      const noteArgs = { identifier: username, id: post.id.toString() };
-      const note = await ctx.getObject(Note, noteArgs);
-      await ctx.sendActivity(
-        { identifier: username },
-        "followers",
-        new Update({
-          id: new URL("#activity", note?.id ?? undefined),
-          object: note,
-          actors: note?.attributionIds,
-          tos: note?.toIds,
-          ccs: note?.ccIds,
-        }),
-      );
-    }
-
     return updatedPost;
   });
 
+  if (post.state === "published") {
+    const noteArgs = { identifier: username, id: post.id };
+    const note = await ctx.getObject(Note, noteArgs);
+    await ctx.sendActivity(
+      { identifier: username },
+      "followers",
+      new Update({
+        id: new URL("#activity", note?.id ?? undefined),
+        object: note,
+        actors: note?.attributionIds,
+        tos: note?.toIds,
+        ccs: note?.ccIds,
+      }),
+    );
+  }
   return post;
 }
 
@@ -207,7 +206,7 @@ export async function deletePost(postId: string) {
     throw new Error("Main actor is not defined");
   }
 
-  const username = mainActor.actor.handle;
+  const username = mainActor.actor.username;
 
   const deletedPost = await prisma.$transaction(async (tx) => {
     const post = await tx.posts.delete({ where: { id: postId } });

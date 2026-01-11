@@ -47,8 +47,9 @@ async function createMainActor() {
         create: {
           userId: user.id,
           uri: `${url.origin}/users/${user.username}`,
-          handle: user.username,
           name: user.name,
+          handle: `@${user.username}@${url.hostname}`,
+          username: user.username,
           inboxUrl: `${url.origin}/users/${user.username}/inbox`,
           sharedInboxUrl: `${url.origin}/inbox`,
           url: `${url.origin}/users/${user.username}`,
@@ -60,8 +61,9 @@ async function createMainActor() {
         create: {
           userId: user.id,
           uri: `${url.origin}/users/${user.username}`,
-          handle: user.username,
           name: user.name,
+          handle: `@${user.username}@${url.hostname}`,
+          username: user.username,
           inboxUrl: `${url.origin}/users/${user.username}/inbox`,
           sharedInboxUrl: `${url.origin}/inbox`,
           url: `${url.origin}/users/${user.username}`,

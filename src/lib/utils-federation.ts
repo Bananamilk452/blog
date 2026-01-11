@@ -41,12 +41,16 @@ export async function upsertActor(
         }
       }
 
+      const handle = await getActorHandle(actor);
+      const username = handle.split("@")[0].slice(1);
+
       return await tx.actor.upsert({
         where: { uri: actor.id.href },
         create: {
           uri: actor.id.href,
-          handle: await getActorHandle(actor),
           name: actor.name?.toString(),
+          handle,
+          username,
           inboxUrl: actor.inboxId.href,
           sharedInboxUrl: actor.endpoints?.sharedInbox?.href,
           url: actor.url?.href?.toString(),
@@ -58,8 +62,9 @@ export async function upsertActor(
           },
         },
         update: {
-          handle: await getActorHandle(actor),
           name: actor.name?.toString(),
+          handle,
+          username,
           inboxUrl: actor.inboxId.href,
           sharedInboxUrl: actor.endpoints?.sharedInbox?.href,
           url: actor.url?.href?.toString(),

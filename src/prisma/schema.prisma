@@ -18,6 +18,7 @@ model Actor {
   id             String     @id @default(uuid(7))
   user           User?      @relation(fields: [userId], references: [id])
   uri            String     @unique
+  username       String
   handle         String     @unique
   name           String?
   inboxUrl       String     @unique
@@ -31,7 +32,7 @@ model Actor {
   follower       Follows[]  @relation("Follower")
   mainActor      MainActor?
   posts          Posts[]
-comments       Comment[]
+  comments       Comment[]
   avatar         Image?     @relation("Avatar", fields: [avatarId], references: [id])
   avatarId       String?    @unique
   banner         Image?     @relation("Banner", fields: [bannerId], references: [id])

@@ -44,9 +44,7 @@ export function ActorCard({
 
         <div className="mt-8 p-4">
           <h2 className="text-2xl font-bold text-black">{actor.name}</h2>
-          <p className="text-sm text-gray-600">
-            @{actor.handle}@{new URL(actor.uri).host}
-          </p>
+          <p className="text-sm text-gray-600">@{actor.username}</p>
 
           <p
             className="mt-2 text-sm whitespace-pre-wrap text-gray-800"
