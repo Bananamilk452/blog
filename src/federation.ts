@@ -1,5 +1,6 @@
 import {
   Accept,
+  Create,
   createFederation,
   Document,
   Endpoints,
@@ -8,6 +9,7 @@ import {
   generateCryptoKeyPair,
   Image,
   importJwk,
+  isActor,
   Note,
   Person,
   PUBLIC_COLLECTION,
@@ -232,6 +234,62 @@ federation
         },
       },
     });
+  })
+  .on(Create, async (ctx, create) => {
+    log(`Received Create activity: ${create.id?.href}`);
+
+    const object = await create.getObject();
+    if (!(object instanceof Note)) return;
+
+    const actor = create.actorId;
+    if (actor == null) return;
+
+    const author = await object.getAttribution();
+    if (!isActor(author) || author.id?.href !== actor.href) return;
+
+    // replyTargetId가 있어야 댓글로 처리
+    const replyTargetId = object.replyTargetId;
+    if (replyTargetId == null) {
+      log("The Note does not have an replyTargetId, skipping");
+      return;
+    }
+
+    // 먼저 포스트에 대한 댓글인지 확인
+    const post = await prisma.posts.findFirst({
+      where: { uri: replyTargetId.href },
+    });
+
+    // 기존 댓글에 대한 답글인지 확인
+    const parentComment = await prisma.comment.findFirst({
+      where: { uri: replyTargetId.href },
+    });
+
+    // 포스트도 아니고 댓글도 아니면 무시
+    if (!post && !parentComment) {
+      log("replyTargetId target not found in posts or comments");
+      return;
+    }
+
+    // actor 저장
+    const actorRecord = await upsertActor(author);
+    if (!actorRecord) return;
+
+    if (object.id == null) return;
+    const content = object.content?.toString() || "";
+
+    // 댓글 저장 (대댓글인 경우 parentId와 해당 댓글의 postId 사용)
+    await prisma.comment.create({
+      data: {
+        uri: object.id.href,
+        actorId: actorRecord.id,
+        postId: post?.id ?? parentComment!.postId,
+        parentId: parentComment?.id ?? null,
+        content,
+        url: object.url?.href?.toString(),
+      },
+    });
+
+    log(`Saved comment: ${object.id.href}`);
   });
 
 federation
