@@ -198,19 +198,34 @@ model Verification {
 }
 
 model Comment {
-  id        String    @id @default(uuid(7))
-  uri       String    @unique
-  actorId   String
-  actor     Actor     @relation(fields: [actorId], references: [id], onDelete: Cascade)
-  postId    String
-  post      Posts     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  parentId  String?
-  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies   Comment[] @relation("CommentReplies")
-  content   String
-  url       String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @default(now()) @updatedAt
+  id         String       @id @default(uuid(7))
+  uri        String       @unique
+  actorId    String
+  actor      Actor        @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  postId     String
+  post       Posts        @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parentId   String?
+  parent     Comment?     @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies    Comment[]    @relation("CommentReplies")
+  content    String
+  url        String?
+  attachment Attachment[]
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @default(now()) @updatedAt
 
   @@map("comments")
+}
+
+model Attachment {
+  id        String   @id @default(uuid(7))
+  commentId String
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  url       String
+  mediaType String?
+  name      String?
+  sensitive Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@map("attachment")
 }
