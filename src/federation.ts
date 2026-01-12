@@ -249,26 +249,28 @@ federation
     const author = await object.getAttribution();
     if (!isActor(author) || author.id?.href !== actor.href) return;
 
-    // replyTargetId가 있어야 댓글로 처리
-    const replyTargetId = object.replyTargetId;
-    if (replyTargetId == null) {
-      log("The Note does not have an replyTargetId, skipping");
+    // replyTarget가 있어야 댓글로 처리
+    const replyTarget = await object.getReplyTarget();
+    if (replyTarget == null || !(replyTarget instanceof Note)) {
+      log("The Note does not have an replyTarget, skipping");
       return;
     }
 
+    const uri = replyTarget.id?.toString();
+
     // 먼저 포스트에 대한 댓글인지 확인
     const post = await prisma.posts.findFirst({
-      where: { uri: replyTargetId.href },
+      where: { uri },
     });
 
     // 기존 댓글에 대한 답글인지 확인
     const parentComment = await prisma.comment.findFirst({
-      where: { uri: replyTargetId.href },
+      where: { uri },
     });
 
     // 포스트도 아니고 댓글도 아니면 무시
     if (!post && !parentComment) {
-      log("replyTargetId target not found in posts or comments");
+      log("replyTarget target not found in posts or comments");
       return;
     }
 
