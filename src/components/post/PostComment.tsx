@@ -2,7 +2,6 @@
 
 import { format } from "date-fns";
 import DOMPurify from "dompurify";
-import Image from "next/image";
 
 import { getCommentsBySlug } from "~/lib/actions/post";
 
@@ -41,11 +40,10 @@ function CommentItem({
     <div className="flex gap-3">
       <div className="shrink-0">
         {comment.actor.avatar && comment.actor.avatar.url ? (
-          <Image
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
             src={comment.actor.avatar.url}
             alt={`${comment.actor.name} avatar`}
-            width={40}
-            height={40}
             className="size-10 rounded-full bg-gray-300"
           />
         ) : (
@@ -68,6 +66,24 @@ function CommentItem({
             className="wrap-break-words dark:prose-invert text-base whitespace-pre-wrap [&_a]:text-blue-500 [&_a]:underline"
             dangerouslySetInnerHTML={{ __html: content }}
           />
+        </div>
+
+        <div className="mt-2">
+          {comment.attachment &&
+            comment.attachment.length > 0 &&
+            comment.attachment.map((att) => {
+              if (att.mediaType?.startsWith("image/")) {
+                return (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={att.id}
+                    src={att.url}
+                    alt={att.name || "Comment Attachment"}
+                    className="mt-2 max-h-60 rounded-md"
+                  />
+                );
+              }
+            })}
         </div>
 
         {"replies" in comment &&

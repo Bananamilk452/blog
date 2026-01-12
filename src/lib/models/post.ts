@@ -326,6 +326,7 @@ export async function getCommentsBySlug(slug: string) {
   return await prisma.comment.findMany({
     where: { postId },
     include: {
+      attachment: true,
       actor: {
         include: {
           avatar: true,
@@ -333,6 +334,7 @@ export async function getCommentsBySlug(slug: string) {
       },
       replies: {
         include: {
+          attachment: true,
           actor: {
             include: {
               avatar: true,

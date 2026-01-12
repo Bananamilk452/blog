@@ -280,6 +280,20 @@ federation
 
     if (object.id == null) return;
     const content = object.content?.toString() || "";
+    const attachments = object.getAttachments();
+
+    const formattedAttachments = [];
+
+    for await (const attachment of attachments) {
+      if (attachment instanceof Document) {
+        formattedAttachments.push({
+          url: attachment.url?.toString() || "",
+          mediaType: attachment.mediaType,
+          sensitive: attachment.sensitive || false,
+          name: attachment.name?.toString(),
+        });
+      }
+    }
 
     // 댓글 저장 (대댓글인 경우 parentId와 해당 댓글의 postId 사용)
     await prisma.comment.create({
@@ -290,6 +304,7 @@ federation
         parentId: parentComment?.id ?? null,
         content,
         url: object.url?.href?.toString(),
+        attachment: { createMany: { data: formattedAttachments } },
       },
     });
 
