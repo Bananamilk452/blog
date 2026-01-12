@@ -2,6 +2,7 @@ import {
   createPost,
   deletePost,
   getCategories,
+  getCommentsBySlug,
   getPost,
   getPostBySlug,
   getPosts,
@@ -78,5 +79,9 @@ export class PostService {
 
   async getCategories() {
     return await getCategories();
+  }
+
+  async getCommentsBySlug(slug: string) {
+    return await getCommentsBySlug(slug);
   }
 }

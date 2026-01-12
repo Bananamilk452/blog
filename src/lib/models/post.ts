@@ -316,3 +316,32 @@ export async function getPosts(options?: {
 export async function getCategories() {
   return await prisma.category.findMany();
 }
+
+export async function getCommentsBySlug(slug: string) {
+  const { id: postId } = await prisma.posts.findUniqueOrThrow({
+    where: { slug },
+    select: { id: true },
+  });
+
+  return await prisma.comment.findMany({
+    where: { postId },
+    include: {
+      actor: {
+        include: {
+          avatar: true,
+        },
+      },
+      replies: {
+        include: {
+          actor: {
+            include: {
+              avatar: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "asc" },
+      },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+}
