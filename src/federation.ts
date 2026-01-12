@@ -428,49 +428,44 @@ federation
     return result;
   });
 
-federation.setObjectDispatcher(
-  Note,
-  "/users/{identifier}/posts/{id}",
-  async (ctx, values) => {
-    log(
-      `Dispatching Note object for identifier: ${values.identifier}, id: ${values.id}`,
-    );
+federation.setObjectDispatcher(Note, "/post/{slug}", async (ctx, values) => {
+  log(`Dispatching Note object for slug: ${values.slug}`);
 
-    const post = await prisma.posts.findFirst({
-      where: {
-        id: values.id,
-      },
-      include: {
-        user: true,
-        banner: true,
-      },
-    });
+  const post = await prisma.posts.findFirst({
+    where: {
+      slug: values.slug,
+    },
+    include: {
+      user: true,
+      banner: true,
+      actor: true,
+    },
+  });
 
-    if (!post) return null;
+  if (!post) return null;
 
-    const content = `${post.title}<br /><br />${post.user.name} - 마지막 수정 ${format(post.updatedAt, "yyyy/MM/dd")}<br /><br />${post.content}`;
+  const content = `<a href="${post.uri}">${post.title}</a> (작성자: ${post.user.name} - 마지막 수정 ${format(post.updatedAt, "yyyy/MM/dd")})<br />${post.content}`;
 
-    return new Note({
-      id: ctx.getObjectUri(Note, values),
-      attribution: ctx.getActorUri(values.identifier),
-      to: PUBLIC_COLLECTION,
-      cc: ctx.getFollowersUri(values.identifier),
-      content,
-      mediaType: "text/html",
-      published: Temporal.Instant.from(
-        post.publishedAt
-          ? post.publishedAt.toISOString()
-          : post.createdAt.toISOString(),
-      ),
-      url: ctx.getObjectUri(Note, values),
-      attachments: post.banner
-        ? [
-            new Document({
-              url: new URL(post.banner.url),
-            }),
-          ]
-        : undefined,
-    });
-  },
-);
+  return new Note({
+    id: ctx.getObjectUri(Note, values),
+    attribution: ctx.getActorUri(post.actor.username),
+    to: PUBLIC_COLLECTION,
+    cc: ctx.getFollowersUri(post.actor.username),
+    content,
+    mediaType: "text/html",
+    published: Temporal.Instant.from(
+      post.publishedAt
+        ? post.publishedAt.toISOString()
+        : post.createdAt.toISOString(),
+    ),
+    url: ctx.getObjectUri(Note, values),
+    attachments: post.banner
+      ? [
+          new Document({
+            url: new URL(post.banner.url),
+          }),
+        ]
+      : undefined,
+  });
+});
 export { federation };

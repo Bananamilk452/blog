@@ -71,8 +71,7 @@ export async function createPost(
     });
 
     const url = ctx.getObjectUri(Note, {
-      identifier: username,
-      id: post.id,
+      slug: data.slug!,
     }).href;
 
     const updatedPost = await tx.posts.update({
@@ -84,7 +83,7 @@ export async function createPost(
   });
 
   if (post.state === "published") {
-    const noteArgs = { identifier: username, id: post.id };
+    const noteArgs = { slug: data.slug! };
     const note = await ctx.getObject(Note, noteArgs);
     await ctx.sendActivity(
       { identifier: username },
@@ -176,7 +175,7 @@ export async function updatePost(
   });
 
   if (post.state === "published") {
-    const noteArgs = { identifier: username, id: post.id };
+    const noteArgs = { slug: data.slug! };
     const note = await ctx.getObject(Note, noteArgs);
     await ctx.sendActivity(
       { identifier: username },
@@ -212,7 +211,7 @@ export async function deletePost(postId: string) {
     const post = await tx.posts.delete({ where: { id: postId } });
 
     if (post.state === "published") {
-      const noteArgs = { identifier: username, id: post.id.toString() };
+      const noteArgs = { slug: post.slug! };
       const note = await ctx.getObject(Note, noteArgs);
       await ctx.sendActivity(
         { identifier: username },
