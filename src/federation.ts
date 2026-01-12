@@ -16,6 +16,7 @@ import {
   PUBLIC_COLLECTION,
   Recipient,
   Undo,
+  Update,
 } from "@fedify/fedify";
 import { RedisKvStore, RedisMessageQueue } from "@fedify/redis";
 import { Temporal } from "@js-temporal/polyfill";
@@ -323,6 +324,59 @@ federation
     });
 
     log(`Deleted comment: ${comment.id}`);
+  })
+  .on(Update, async (ctx, update) => {
+    log(`Received Update activity: ${update.id?.href}`);
+
+    const object = await update.getObject();
+    if (!object) return;
+
+    if (object instanceof Note) {
+      if (object.id == null) return;
+
+      const comment = await prisma.comment.findFirst({
+        where: { uri: object.id.href },
+        include: { actor: true },
+      });
+
+      if (!comment) {
+        log(`Comment not found for update: ${object.id.href}`);
+        return;
+      }
+
+      if (update.actorId?.href !== comment.actor.uri) {
+        log(
+          `Unauthorized update attempt. Request actor: ${update.actorId?.href}, Comment actor: ${comment.actor.uri}`,
+        );
+        return;
+      }
+
+      const content = object.content?.toString() || "";
+
+      await prisma.comment.update({
+        where: { id: comment.id },
+        data: {
+          content,
+          url: object.url?.href?.toString(),
+        },
+      });
+
+      log(`Updated comment: ${comment.id}`);
+      return;
+    }
+
+    if (isActor(object)) {
+      if (update.actorId?.href !== object.id?.href) {
+        log(
+          "Unauthorized actor update attempt: Actor can only update themselves",
+        );
+        return;
+      }
+
+      await upsertActor(object);
+      log(`Updated actor profile: ${object.id?.href}`);
+      return;
+    }
   });
 
 federation
