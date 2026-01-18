@@ -2,6 +2,7 @@
 
 import { format } from "date-fns";
 import DOMPurify from "dompurify";
+import Link from "next/link";
 
 import { getCommentsBySlug } from "~/lib/actions/post";
 
@@ -54,7 +55,13 @@ function CommentItem({
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-baseline gap-2">
           <span className="font-semibold">{comment.actor.name}</span>
-          <span className="text-sm text-gray-500">{comment.actor.handle}</span>
+          <Link
+            href={comment.actor.uri}
+            target="_blank"
+            className="text-sm text-gray-500 hover:underline"
+          >
+            {comment.actor.handle}
+          </Link>
           <span className="text-xs text-gray-500">
             {format(new Date(comment.createdAt), "yyyy년 MM월 dd일 HH:mm")}
           </span>
