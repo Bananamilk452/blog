@@ -1,9 +1,24 @@
-import { Create, Delete, Note, Update } from "@fedify/fedify";
+import {
+  Actor,
+  Create,
+  Delete,
+  Document,
+  isActor,
+  Mention,
+  Note,
+  PUBLIC_COLLECTION,
+  Recipient,
+  Update,
+} from "@fedify/fedify";
+import { Temporal } from "@js-temporal/polyfill";
+import DOMPurify from "isomorphic-dompurify";
+import { marked } from "marked";
 
 import { federation } from "~/federation";
 import { Category, Image } from "~/generated/prisma";
 import { prisma } from "~/lib/prisma";
 
+import { isFollowersOnly, isNonList, isPublic } from "../utils-federation";
 import { uploadFile } from "./s3";
 
 export async function createPost(
@@ -323,7 +338,7 @@ export async function getCommentsBySlug(slug: string) {
     select: { id: true },
   });
 
-  return await prisma.comment.findMany({
+  const comments = await prisma.comment.findMany({
     where: { postId },
     include: {
       attachment: true,
@@ -346,4 +361,265 @@ export async function getCommentsBySlug(slug: string) {
     },
     orderBy: { createdAt: "asc" },
   });
+
+  const mainActor = await prisma.mainActor.findFirst({
+    include: { actor: true },
+  });
+
+  if (!mainActor) {
+    throw new Error("Main actor is not defined");
+  }
+
+  const commentWithoutMainActor = comments.map((comment) => {
+    return {
+      ...comment,
+      mentions: (comment.mentions as { href: string; name: string }[]).filter(
+        (m) => m.href !== mainActor.actor.uri,
+      ),
+    };
+  });
+
+  return commentWithoutMainActor;
+}
+
+export async function createComment(
+  actorId: string,
+  data: {
+    postId: string;
+    parentId?: string;
+    content: string;
+    images?: Array<{ url: string; mediaType: string }>;
+    mentions?: string[];
+  },
+) {
+  // Convert markdown to HTML
+  const htmlContent = await marked(data.content);
+
+  // Sanitize HTML on server-side (defense-in-depth)
+  const sanitizedContent = DOMPurify.sanitize(htmlContent);
+
+  // Get post to verify it exists and get slug
+  const post = await prisma.posts.findUniqueOrThrow({
+    where: { id: data.postId },
+    select: { slug: true, id: true },
+  });
+
+  // Get main actor for federation
+  const mainActor = await prisma.mainActor.findFirst({
+    include: { actor: true },
+  });
+
+  if (!mainActor) {
+    throw new Error("Main actor is not defined");
+  }
+
+  const username = mainActor.actor.username;
+
+  // Create federation context
+  const ctx = federation.createContext(
+    new Request(process.env.PUBLIC_URL!),
+    undefined,
+  );
+
+  const mentions = data.content
+    .split(/\s+/)
+    .filter((word) => word.startsWith("@"));
+
+  const mentionActors: Actor[] = [];
+
+  for (const mention of mentions) {
+    const actor = await ctx.lookupObject(mention);
+
+    if (isActor(actor)) {
+      mentionActors.push(actor);
+    }
+  }
+
+  const comment = await prisma.$transaction(async (tx) => {
+    // Prepare to/cc for storage
+    const toRecipients: string[] = [];
+    const ccRecipients: string[] = [];
+
+    if (data.parentId) {
+      const parentComment = await tx.comment.findUniqueOrThrow({
+        where: { id: data.parentId },
+        select: {
+          to: true,
+          cc: true,
+          actor: { select: { uri: true } },
+        },
+      });
+
+      if (isPublic(parentComment.to, parentComment.cc)) {
+        toRecipients.push(PUBLIC_COLLECTION.href);
+        ccRecipients.push(
+          ctx.getFollowersUri(username).href,
+          ...mentionActors.map((a) => a.url!.toString()),
+        );
+      } else if (isNonList(parentComment.to, parentComment.cc)) {
+        toRecipients.push(
+          ctx.getFollowersUri(username).href,
+          ...mentionActors.map((a) => a.url!.toString()),
+        );
+        ccRecipients.push(PUBLIC_COLLECTION.href);
+      } else if (isFollowersOnly(parentComment.to, parentComment.cc)) {
+        toRecipients.push(ctx.getFollowersUri(username).href);
+        ccRecipients.push(...mentionActors.map((a) => a.url!.toString()));
+      }
+    } else {
+      // Reply to post
+      const postActor = await tx.posts.findUnique({
+        where: { id: data.postId },
+        select: { actor: { select: { uri: true, username: true } } },
+      });
+      if (postActor) {
+        toRecipients.push(postActor.actor.uri);
+        ccRecipients.push(
+          PUBLIC_COLLECTION.href,
+          ctx.getFollowersUri(postActor.actor.username).href,
+        );
+      }
+    }
+
+    // Create comment with temporary URI
+    const comment = await tx.comment.create({
+      data: {
+        uri: "https://localhost/",
+        actorId,
+        postId: data.postId,
+        parentId: data.parentId ?? null,
+        content: sanitizedContent,
+        url: null,
+        to: toRecipients,
+        cc: ccRecipients,
+        attachment:
+          data.images && data.images.length > 0
+            ? {
+                createMany: {
+                  data: data.images.map((img) => ({
+                    url: img.url,
+                    mediaType: img.mediaType,
+                    sensitive: false,
+                  })),
+                },
+              }
+            : undefined,
+        mentions: mentionActors.map((a) => ({
+          href: a.url!.toString(),
+          name: `@${a.preferredUsername}@${a.id?.hostname}`,
+        })),
+      },
+    });
+
+    // Generate proper URI for the comment using post slug + UUID
+    const commentSlug = `${post.slug}-${crypto.randomUUID()}`;
+    const commentUri = `${process.env.PUBLIC_URL}/post/${commentSlug}`;
+
+    // Update with proper URI
+    const updatedComment = await tx.comment.update({
+      where: { id: comment.id },
+      data: {
+        uri: commentUri,
+        url: commentUri,
+      },
+    });
+
+    return updatedComment;
+  });
+
+  // Send ActivityPub Create activity to followers
+  try {
+    const noteArgs = { slug: comment.uri.split("/post/")[1] };
+    const note = await ctx.getObject(Note, noteArgs);
+
+    if (!note) {
+      throw new Error("Failed to retrieve Note object for the post");
+    }
+
+    console.log(
+      mentionActors,
+      new Create({
+        id: new URL("#activity", note?.id ?? undefined),
+        actors: note?.attributionIds,
+        tos: note?.toIds,
+        ccs: note?.ccIds,
+        object: new Note({
+          id: new URL(comment.uri),
+          attribution: new URL(mainActor.actor.uri),
+          tos: note?.toIds,
+          ccs: note?.ccIds,
+          content: sanitizedContent,
+          replyTarget: data.parentId
+            ? await prisma.comment
+                .findUnique({
+                  where: { id: data.parentId },
+                  select: { uri: true },
+                })
+                .then((c) => (c ? new URL(c.uri) : undefined))
+            : new URL(`${process.env.PUBLIC_URL}/post/${post.slug}`),
+          attachments: data.images?.map(
+            (img) =>
+              new Document({
+                url: new URL(img.url),
+                mediaType: img.mediaType,
+              }),
+          ),
+          published: Temporal.Instant.from(comment.createdAt.toISOString()),
+          tags: mentionActors.map(
+            (actor) =>
+              new Mention({
+                href: actor.id,
+                name: actor.preferredUsername,
+              }),
+          ),
+        }),
+      }),
+    );
+
+    await ctx.sendActivity(
+      { identifier: username },
+      mentionActors,
+      new Create({
+        id: new URL("#activity", note?.id ?? undefined),
+        actors: note?.attributionIds,
+        tos: note?.toIds,
+        ccs: note?.ccIds,
+        object: new Note({
+          id: new URL(comment.uri),
+          attribution: new URL(mainActor.actor.uri),
+          tos: note?.toIds,
+          ccs: note?.ccIds,
+          content: sanitizedContent,
+          replyTarget: data.parentId
+            ? await prisma.comment
+                .findUnique({
+                  where: { id: data.parentId },
+                  select: { uri: true },
+                })
+                .then((c) => (c ? new URL(c.uri) : undefined))
+            : new URL(`${process.env.PUBLIC_URL}/post/${post.slug}`),
+          attachments: data.images?.map(
+            (img) =>
+              new Document({
+                url: new URL(img.url),
+                mediaType: img.mediaType,
+              }),
+          ),
+          published: Temporal.Instant.from(comment.createdAt.toISOString()),
+          tags: mentionActors.map(
+            (actor) =>
+              new Mention({
+                href: actor.id,
+                name: actor.preferredUsername,
+              }),
+          ),
+        }),
+      }),
+    );
+  } catch (error) {
+    // Log federation errors but don't fail the comment creation
+    console.error("Failed to send Create activity for comment:", error);
+  }
+
+  return comment;
 }

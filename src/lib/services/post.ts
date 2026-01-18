@@ -1,4 +1,5 @@
 import {
+  createComment,
   createPost,
   deletePost,
   getCategories,
@@ -8,6 +9,7 @@ import {
   getPosts,
   updatePost,
 } from "~/lib/models/post";
+import { prisma } from "~/lib/prisma";
 import { requireUserId } from "~/lib/utils-server";
 
 export class PostService {
@@ -83,5 +85,29 @@ export class PostService {
 
   async getCommentsBySlug(slug: string) {
     return await getCommentsBySlug(slug);
+  }
+
+  @requireUserId
+  async createComment(data: {
+    postId: string;
+    parentId?: string;
+    content: string;
+    images?: Array<{ url: string; mediaType: string }>;
+  }) {
+    if (data.content.trim().length === 0) {
+      throw new Error("Comment content cannot be empty");
+    }
+
+    // Get main actor - only blog owner can reply
+    const mainActor = await prisma.mainActor.findFirst({
+      include: { actor: true },
+    });
+
+    if (!mainActor) {
+      throw new Error("Main actor is not defined");
+    }
+
+    const comment = await createComment(mainActor.actor.id, data);
+    return comment;
   }
 }

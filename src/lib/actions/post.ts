@@ -2,6 +2,7 @@
 
 import { PostService } from "../services/post";
 import { getOptionalSession, getValidAdminSession } from "../utils-server";
+import { uploadFile } from "./s3";
 
 export async function createPost(
   data: Parameters<typeof PostService.prototype.createPost>[0],
@@ -74,4 +75,34 @@ export async function getCommentsBySlug(slug: string) {
   const postService = new PostService(session?.user.id);
 
   return await postService.getCommentsBySlug(slug);
+}
+
+export async function createComment(data: {
+  postId: string;
+  parentId?: string;
+  content: string;
+  images?: File[];
+}) {
+  const session = await getValidAdminSession();
+
+  const postService = new PostService(session.user.id);
+
+  // Upload all images to S3
+  const uploadedImages: Array<{ url: string; mediaType: string }> = [];
+  if (data.images && data.images.length > 0) {
+    for (const image of data.images) {
+      const imageUrl = await uploadFile(image, "comments");
+      uploadedImages.push({
+        url: imageUrl,
+        mediaType: image.type,
+      });
+    }
+  }
+
+  return await postService.createComment({
+    postId: data.postId,
+    parentId: data.parentId,
+    content: data.content,
+    images: uploadedImages.length > 0 ? uploadedImages : undefined,
+  });
 }
