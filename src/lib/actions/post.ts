@@ -67,3 +67,11 @@ export async function getCategories() {
 
   return await postService.getCategories();
 }
+
+export async function getCommentsBySlug(slug: string) {
+  const session = await getOptionalSession();
+
+  const postService = new PostService(session?.user.id);
+
+  return await postService.getCommentsBySlug(slug);
+}

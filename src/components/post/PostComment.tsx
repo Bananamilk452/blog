@@ -1,0 +1,108 @@
+"use client";
+
+import { format } from "date-fns";
+import DOMPurify from "dompurify";
+import Link from "next/link";
+
+import { getCommentsBySlug } from "~/lib/actions/post";
+
+type CommentWithActor = Awaited<ReturnType<typeof getCommentsBySlug>>[number];
+
+export function PostComments({ comments }: { comments: CommentWithActor[] }) {
+  const topLevelComments = comments.filter((comment) => !comment.parentId);
+
+  if (comments.length === 0) {
+    return (
+      <p className="py-8 text-center text-gray-500">아직 댓글이 없습니다.</p>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      {topLevelComments.map((comment) => (
+        <CommentItem key={comment.id} comment={comment} />
+      ))}
+    </div>
+  );
+}
+
+function CommentItem({
+  comment,
+}: {
+  comment: CommentWithActor | CommentWithActor["replies"][number];
+}) {
+  const isEdited =
+    new Date(comment.createdAt).getTime() !==
+    new Date(comment.updatedAt).getTime();
+
+  const content = DOMPurify.sanitize(comment.content);
+
+  return (
+    <div className="flex gap-3">
+      <div className="shrink-0">
+        {comment.actor.avatar && comment.actor.avatar.url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={comment.actor.avatar.url}
+            alt={`${comment.actor.name} avatar`}
+            className="size-10 rounded-full bg-gray-300"
+          />
+        ) : (
+          <div className="size-10 rounded-full bg-gray-300" />
+        )}
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-baseline gap-2">
+          <span className="font-semibold">{comment.actor.name}</span>
+          <Link
+            href={comment.actor.uri}
+            target="_blank"
+            className="text-sm text-gray-500 hover:underline"
+          >
+            {comment.actor.handle}
+          </Link>
+          <span className="text-xs text-gray-500">
+            {format(new Date(comment.createdAt), "yyyy년 MM월 dd일 HH:mm")}
+          </span>
+          {isEdited && <span className="text-xs text-gray-400">(수정됨)</span>}
+        </div>
+
+        <div className="mt-2">
+          <p
+            className="wrap-break-words dark:prose-invert text-base whitespace-pre-wrap [&_a]:text-blue-500 [&_a]:underline"
+            dangerouslySetInnerHTML={{ __html: content }}
+          />
+        </div>
+
+        <div className="mt-2">
+          {comment.attachment &&
+            comment.attachment.length > 0 &&
+            comment.attachment.map((att) => {
+              if (att.mediaType?.startsWith("image/")) {
+                return (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={att.id}
+                    src={att.url}
+                    alt={att.name || "Comment Attachment"}
+                    className="mt-2 max-h-60 rounded-md"
+                  />
+                );
+              }
+            })}
+        </div>
+
+        {"replies" in comment &&
+          comment.replies &&
+          comment.replies.length > 0 && (
+            <div className="mt-4 ml-8 flex flex-col gap-4 border-l-2 border-gray-200 pl-4">
+              {comment.replies.map((reply) => (
+                <CommentItem key={reply.id} comment={reply} />
+              ))}
+            </div>
+          )}
+      </div>
+    </div>
+  );
+}

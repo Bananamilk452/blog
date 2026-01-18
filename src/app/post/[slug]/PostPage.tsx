@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import Image from "next/image";
 
 import { PostDropdownMenu } from "~/components/dashboard/post/PostPaginationList";
+import { PostComments } from "~/components/post/PostComment";
 import { Badge } from "~/components/ui/badge";
 import { Image as ImageType, User } from "~/generated/prisma";
 import { usePost } from "~/hooks/usePost";
@@ -14,7 +15,7 @@ type UserWithAvatar = User & {
 };
 
 export function PostPage({ slug }: { slug: string }) {
-  const { data: post } = usePost(slug);
+  const { post, comments } = usePost(slug);
   const session = useSession();
 
   return (
@@ -56,6 +57,13 @@ export function PostPage({ slug }: { slug: string }) {
         className="dark:prose-invert prose"
         dangerouslySetInnerHTML={{ __html: post.content }}
       ></div>
+
+      <hr className="border-gray-600 my-6" />
+
+      <div>
+        <h2 className="text-2xl font-bold mb-4">댓글</h2>
+        <PostComments comments={comments} />
+      </div>
     </div>
   );
 }

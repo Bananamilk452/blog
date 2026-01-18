@@ -1,6 +1,8 @@
 import {
   Accept,
+  Create,
   createFederation,
+  Delete,
   Document,
   Endpoints,
   exportJwk,
@@ -8,11 +10,13 @@ import {
   generateCryptoKeyPair,
   Image,
   importJwk,
+  isActor,
   Note,
   Person,
   PUBLIC_COLLECTION,
   Recipient,
   Undo,
+  Update,
 } from "@fedify/fedify";
 import { RedisKvStore, RedisMessageQueue } from "@fedify/redis";
 import { Temporal } from "@js-temporal/polyfill";
@@ -232,6 +236,164 @@ federation
         },
       },
     });
+  })
+  .on(Create, async (ctx, create) => {
+    log(`Received Create activity: ${create.id?.href}`);
+
+    const object = await create.getObject();
+    if (!(object instanceof Note)) return;
+
+    const actor = create.actorId;
+    if (actor == null) return;
+
+    const author = await object.getAttribution();
+    if (!isActor(author) || author.id?.href !== actor.href) return;
+
+    // replyTarget가 있어야 댓글로 처리
+    const replyTarget = await object.getReplyTarget();
+    if (replyTarget == null || !(replyTarget instanceof Note)) {
+      log("The Note does not have an replyTarget, skipping");
+      return;
+    }
+
+    const uri = replyTarget.id?.toString();
+
+    // 먼저 포스트에 대한 댓글인지 확인
+    const post = await prisma.posts.findFirst({
+      where: { uri },
+    });
+
+    // 기존 댓글에 대한 답글인지 확인
+    const parentComment = await prisma.comment.findFirst({
+      where: { uri },
+    });
+
+    // 포스트도 아니고 댓글도 아니면 무시
+    if (!post && !parentComment) {
+      log("replyTarget target not found in posts or comments");
+      return;
+    }
+
+    // actor 저장
+    const actorRecord = await upsertActor(author);
+    if (!actorRecord) return;
+
+    if (object.id == null) return;
+    const content = object.content?.toString() || "";
+    const attachments = object.getAttachments();
+
+    const formattedAttachments = [];
+
+    for await (const attachment of attachments) {
+      if (attachment instanceof Document) {
+        formattedAttachments.push({
+          url: attachment.url?.toString() || "",
+          mediaType: attachment.mediaType,
+          sensitive: attachment.sensitive || false,
+          name: attachment.name?.toString(),
+        });
+      }
+    }
+
+    // 댓글 저장 (대댓글인 경우 parentId와 해당 댓글의 postId 사용)
+    await prisma.comment.create({
+      data: {
+        uri: object.id.href,
+        actorId: actorRecord.id,
+        postId: post?.id ?? parentComment!.postId,
+        parentId: parentComment?.id ?? null,
+        content,
+        url: object.url?.href?.toString(),
+        attachment: { createMany: { data: formattedAttachments } },
+      },
+    });
+
+    log(`Saved comment: ${object.id.href}`);
+  })
+  .on(Delete, async (ctx, del) => {
+    log(`Received Delete activity: ${del.id?.href}`);
+
+    const objectId = del.objectId;
+    if (objectId == null) {
+      log("The Delete object does not have an objectId:", del);
+      return;
+    }
+
+    const comment = await prisma.comment.findFirst({
+      where: { uri: objectId.href },
+      include: { actor: true },
+    });
+
+    if (!comment) {
+      log(`Comment not found for deletion: ${objectId.href}`);
+      return;
+    }
+
+    if (del.actorId?.href !== comment.actor.uri) {
+      log(
+        `Unauthorized delete attempt. Request actor: ${del.actorId?.href}, Comment actor: ${comment.actor.uri}`,
+      );
+      return;
+    }
+
+    await prisma.comment.delete({
+      where: { id: comment.id },
+    });
+
+    log(`Deleted comment: ${comment.id}`);
+  })
+  .on(Update, async (ctx, update) => {
+    log(`Received Update activity: ${update.id?.href}`);
+
+    const object = await update.getObject();
+    if (!object) return;
+
+    if (object instanceof Note) {
+      if (object.id == null) return;
+
+      const comment = await prisma.comment.findFirst({
+        where: { uri: object.id.href },
+        include: { actor: true },
+      });
+
+      if (!comment) {
+        log(`Comment not found for update: ${object.id.href}`);
+        return;
+      }
+
+      if (update.actorId?.href !== comment.actor.uri) {
+        log(
+          `Unauthorized update attempt. Request actor: ${update.actorId?.href}, Comment actor: ${comment.actor.uri}`,
+        );
+        return;
+      }
+
+      const content = object.content?.toString() || "";
+
+      await prisma.comment.update({
+        where: { id: comment.id },
+        data: {
+          content,
+          url: object.url?.href?.toString(),
+        },
+      });
+
+      log(`Updated comment: ${comment.id}`);
+      return;
+    }
+
+    if (isActor(object)) {
+      if (update.actorId?.href !== object.id?.href) {
+        log(
+          "Unauthorized actor update attempt: Actor can only update themselves",
+        );
+        return;
+      }
+
+      await upsertActor(object);
+      log(`Updated actor profile: ${object.id?.href}`);
+      return;
+    }
   });
 
 federation
@@ -281,49 +443,44 @@ federation
     return result;
   });
 
-federation.setObjectDispatcher(
-  Note,
-  "/users/{identifier}/posts/{id}",
-  async (ctx, values) => {
-    log(
-      `Dispatching Note object for identifier: ${values.identifier}, id: ${values.id}`,
-    );
+federation.setObjectDispatcher(Note, "/post/{slug}", async (ctx, values) => {
+  log(`Dispatching Note object for slug: ${values.slug}`);
 
-    const post = await prisma.posts.findFirst({
-      where: {
-        id: values.id,
-      },
-      include: {
-        user: true,
-        banner: true,
-      },
-    });
+  const post = await prisma.posts.findFirst({
+    where: {
+      slug: values.slug,
+    },
+    include: {
+      user: true,
+      banner: true,
+      actor: true,
+    },
+  });
 
-    if (!post) return null;
+  if (!post) return null;
 
-    const content = `${post.title}<br /><br />${post.user.name} - 마지막 수정 ${format(post.updatedAt, "yyyy/MM/dd")}<br /><br />${post.content}`;
+  const content = `<a href="${post.uri}">${post.title}</a> (작성자: ${post.user.name} - 마지막 수정 ${format(post.updatedAt, "yyyy/MM/dd")})<br />${post.content}`;
 
-    return new Note({
-      id: ctx.getObjectUri(Note, values),
-      attribution: ctx.getActorUri(values.identifier),
-      to: PUBLIC_COLLECTION,
-      cc: ctx.getFollowersUri(values.identifier),
-      content,
-      mediaType: "text/html",
-      published: Temporal.Instant.from(
-        post.publishedAt
-          ? post.publishedAt.toISOString()
-          : post.createdAt.toISOString(),
-      ),
-      url: ctx.getObjectUri(Note, values),
-      attachments: post.banner
-        ? [
-            new Document({
-              url: new URL(post.banner.url),
-            }),
-          ]
-        : undefined,
-    });
-  },
-);
+  return new Note({
+    id: ctx.getObjectUri(Note, values),
+    attribution: ctx.getActorUri(post.actor.username),
+    to: PUBLIC_COLLECTION,
+    cc: ctx.getFollowersUri(post.actor.username),
+    content,
+    mediaType: "text/html",
+    published: Temporal.Instant.from(
+      post.publishedAt
+        ? post.publishedAt.toISOString()
+        : post.createdAt.toISOString(),
+    ),
+    url: ctx.getObjectUri(Note, values),
+    attachments: post.banner
+      ? [
+          new Document({
+            url: new URL(post.banner.url),
+          }),
+        ]
+      : undefined,
+  });
+});
 export { federation };
