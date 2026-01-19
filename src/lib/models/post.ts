@@ -392,12 +392,6 @@ export async function createComment(
     mentions?: string[];
   },
 ) {
-  // Convert markdown to HTML
-  const htmlContent = await marked(data.content);
-
-  // Sanitize HTML on server-side (defense-in-depth)
-  const sanitizedContent = DOMPurify.sanitize(htmlContent);
-
   // Get post to verify it exists and get slug
   const post = await prisma.posts.findUniqueOrThrow({
     where: { id: data.postId },
@@ -434,6 +428,24 @@ export async function createComment(
       mentionActors.push(actor);
     }
   }
+
+  const mentionedContent = data.content.replace(
+    /@([a-zA-Z0-9_]+)(@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})?/g,
+    (match, p1, p2) => {
+      const actor = mentionActors.find((a) => a.preferredUsername === p1);
+      console.log("Mention match:", match, actor);
+      if (actor) {
+        return `<a href="${actor.url?.toString()}" class="u-url mention">@${p1}${p2 || ""}</a>`;
+      }
+      return match;
+    },
+  );
+
+  // Convert markdown to HTML
+  const htmlContent = await marked(mentionedContent);
+
+  // Sanitize HTML on server-side (defense-in-depth)
+  const sanitizedContent = DOMPurify.sanitize(htmlContent);
 
   const comment = await prisma.$transaction(async (tx) => {
     // Prepare to/cc for storage
@@ -535,46 +547,6 @@ export async function createComment(
     if (!note) {
       throw new Error("Failed to retrieve Note object for the post");
     }
-
-    console.log(
-      mentionActors,
-      new Create({
-        id: new URL("#activity", note?.id ?? undefined),
-        actors: note?.attributionIds,
-        tos: note?.toIds,
-        ccs: note?.ccIds,
-        object: new Note({
-          id: new URL(comment.uri),
-          attribution: new URL(mainActor.actor.uri),
-          tos: note?.toIds,
-          ccs: note?.ccIds,
-          content: sanitizedContent,
-          replyTarget: data.parentId
-            ? await prisma.comment
-                .findUnique({
-                  where: { id: data.parentId },
-                  select: { uri: true },
-                })
-                .then((c) => (c ? new URL(c.uri) : undefined))
-            : new URL(`${process.env.PUBLIC_URL}/post/${post.slug}`),
-          attachments: data.images?.map(
-            (img) =>
-              new Document({
-                url: new URL(img.url),
-                mediaType: img.mediaType,
-              }),
-          ),
-          published: Temporal.Instant.from(comment.createdAt.toISOString()),
-          tags: mentionActors.map(
-            (actor) =>
-              new Mention({
-                href: actor.id,
-                name: actor.preferredUsername,
-              }),
-          ),
-        }),
-      }),
-    );
 
     await ctx.sendActivity(
       { identifier: username },

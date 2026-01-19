@@ -1,4 +1,3 @@
-import { AsyncLocalStorage } from "node:async_hooks";
 import {
   Accept,
   Create,
@@ -22,7 +21,6 @@ import {
 } from "@fedify/fedify";
 import { RedisKvStore, RedisMessageQueue } from "@fedify/redis";
 import { Temporal } from "@js-temporal/polyfill";
-import { configure, getConsoleSink } from "@logtape/logtape";
 import { format } from "date-fns";
 import debug from "debug";
 import { Redis } from "ioredis";
