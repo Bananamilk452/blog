@@ -1,4 +1,9 @@
-import { Activity, getActorHandle } from "@fedify/fedify";
+import {
+  Activity,
+  getActorHandle,
+  Note,
+  PUBLIC_COLLECTION,
+} from "@fedify/fedify";
 import debug from "debug";
 
 import { uploadFile } from "./models/s3";
@@ -87,4 +92,65 @@ export async function upsertActor(
       log("Error upserting actor:", err);
       throw err;
     });
+}
+
+export function isPublic(toIds: URL[] | string[], ccIds: URL[] | string[]) {
+  const toIdsUrls = toIds.map((url) =>
+    typeof url === "string" ? new URL(url) : url,
+  );
+
+  if (toIdsUrls.find((url) => url.href === PUBLIC_COLLECTION.href)) {
+    return true;
+  }
+}
+
+export function isNonList(toIds: URL[] | string[], ccIds: URL[] | string[]) {
+  const toIdsUrls = toIds.map((url) =>
+    typeof url === "string" ? new URL(url) : url,
+  );
+  const ccIdsUrls = ccIds.map((url) =>
+    typeof url === "string" ? new URL(url) : url,
+  );
+
+  if (
+    toIdsUrls.find((url) => url.href !== PUBLIC_COLLECTION.href) &&
+    ccIdsUrls.find((url) => url.href == PUBLIC_COLLECTION.href)
+  ) {
+    return true;
+  }
+  return false;
+}
+
+export function isFollowersOnly(
+  toIds: URL[] | string[],
+  ccIds: URL[] | string[],
+) {
+  const toIdsUrls = toIds.map((url) =>
+    typeof url === "string" ? new URL(url) : url,
+  );
+  const ccIdsUrls = ccIds.map((url) =>
+    typeof url === "string" ? new URL(url) : url,
+  );
+
+  if (
+    !toIdsUrls.find((url) => url.href === PUBLIC_COLLECTION.href) &&
+    !ccIdsUrls.find((url) => url.href === PUBLIC_COLLECTION.href)
+  ) {
+    return true;
+  }
+  return false;
+}
+
+export function getTagFromNote(note: Note) {
+  const json = note.toJsonLd() as
+    | {
+        tag?: { type: string; href: string; name: string }[];
+      }
+    | { type: string; href: string; name: string };
+
+  if ("tag" in json && Array.isArray(json.tag)) {
+    return json.tag;
+  } else {
+    return [json];
+  }
 }

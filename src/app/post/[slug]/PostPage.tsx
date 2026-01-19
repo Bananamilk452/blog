@@ -62,7 +62,7 @@ export function PostPage({ slug }: { slug: string }) {
 
       <div>
         <h2 className="text-2xl font-bold mb-4">댓글</h2>
-        <PostComments comments={comments} />
+        <PostComments comments={comments} slug={slug} />
       </div>
     </div>
   );

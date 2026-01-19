@@ -28,6 +28,7 @@ model Actor {
   updatedAt      DateTime   @default(now()) @updatedAt
   userId         String?    @unique
   summary        String?
+  keys           Keys[]
   following      Follows[]  @relation("Following")
   follower       Follows[]  @relation("Follower")
   mainActor      MainActor?
@@ -42,15 +43,15 @@ model Actor {
 }
 
 model Keys {
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId     String
   type       String
   privateKey String
   publicKey  String
   createdAt  DateTime @default(now())
   updatedAt  DateTime @default(now()) @updatedAt
+  Actor      Actor    @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  actorId    String
 
-  @@id([userId, type])
+  @@id([actorId, type])
   @@map("keys")
 }
 
@@ -137,7 +138,6 @@ model User {
   username        String
   displayUsername String
   actor           Actor?
-  keys            Keys[]
   posts           Posts[]
 
   role       String?
@@ -209,6 +209,9 @@ model Comment {
   replies    Comment[]    @relation("CommentReplies")
   content    String
   url        String?
+  to         String[]     @default([])
+  cc         String[]     @default([])
+  mentions   Json[]       @default([])
   attachment Attachment[]
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @default(now()) @updatedAt

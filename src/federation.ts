@@ -11,6 +11,7 @@ import {
   Image,
   importJwk,
   isActor,
+  Mention,
   Note,
   Person,
   PUBLIC_COLLECTION,
@@ -26,7 +27,7 @@ import { Redis } from "ioredis";
 
 import { Keys as Key } from "./generated/prisma";
 import { prisma } from "./lib/prisma";
-import { upsertActor } from "./lib/utils-federation";
+import { getTagFromNote, upsertActor } from "./lib/utils-federation";
 
 const log = debug("blog:federation");
 
@@ -46,63 +47,52 @@ federation
   .setActorDispatcher("/users/{identifier}", async (ctx, identifier) => {
     log(`Dispatching actor for identifier: ${identifier}`);
 
-    const user = await prisma.user.findFirst({
+    const actor = await prisma.actor.findFirst({
       where: { username: identifier },
-      include: {
-        actor: {
-          include: {
-            avatar: true,
-            banner: true,
-          },
-        },
-      },
+      include: { avatar: true, banner: true },
     });
 
-    if (!user) {
+    if (!actor) {
       return null;
     }
 
     const keys = await ctx.getActorKeyPairs(identifier);
 
     return new Person({
-      id: ctx.getActorUri(identifier),
+      id: new URL(actor.uri),
       preferredUsername: identifier,
-      name: user.actor?.name,
-      summary: user.actor?.summary,
-      inbox: ctx.getInboxUri(identifier),
+      name: actor.name,
+      summary: actor.summary,
+      inbox: new URL(actor.inboxUrl),
       endpoints: new Endpoints({
-        sharedInbox: ctx.getInboxUri(),
+        sharedInbox: new URL(actor.sharedInboxUrl!),
       }),
-      url: ctx.getActorUri(identifier),
+      url: new URL(actor.uri),
       publicKey: keys[0].cryptographicKey,
       assertionMethods: keys.map((k) => k.multikey),
       followers: ctx.getFollowersUri(identifier),
       icon: new Image({
-        url: user.actor?.avatar?.url
-          ? new URL(user.actor?.avatar?.url)
-          : undefined,
+        url: actor.avatar?.url ? new URL(actor.avatar?.url) : undefined,
       }),
       image: new Image({
-        url: user.actor?.banner?.url
-          ? new URL(user.actor?.banner?.url)
-          : undefined,
+        url: actor.banner?.url ? new URL(actor.banner?.url) : undefined,
       }),
     });
   })
   .setKeyPairsDispatcher(async (ctx, identifier) => {
     log(`Dispatching key pairs for identifier: ${identifier}`);
 
-    const user = await prisma.user.findFirst({
+    const actor = await prisma.actor.findFirst({
       where: { username: identifier },
       include: { keys: true },
     });
 
-    if (!user) {
+    if (!actor) {
       return [];
     }
 
     const keys = Object.fromEntries(
-      user?.keys.map((k) => [k.type, k]),
+      actor?.keys.map((k) => [k.type, k]),
     ) as Record<Key["type"], Key>;
     const pairs: CryptoKeyPair[] = [];
 
@@ -116,7 +106,7 @@ federation
         const { privateKey, publicKey } = await generateCryptoKeyPair(keyType);
         await prisma.keys.create({
           data: {
-            userId: user.id,
+            actorId: actor.id,
             type: keyType,
             privateKey: JSON.stringify(await exportJwk(privateKey)),
             publicKey: JSON.stringify(await exportJwk(publicKey)),
@@ -238,77 +228,92 @@ federation
     });
   })
   .on(Create, async (ctx, create) => {
-    log(`Received Create activity: ${create.id?.href}`);
+    try {
+      log(`Received Create activity: ${create.id?.href}`);
 
-    const object = await create.getObject();
-    if (!(object instanceof Note)) return;
+      const object = await create.getObject();
+      if (!(object instanceof Note)) return;
 
-    const actor = create.actorId;
-    if (actor == null) return;
+      const actor = create.actorId;
+      if (actor == null) return;
 
-    const author = await object.getAttribution();
-    if (!isActor(author) || author.id?.href !== actor.href) return;
+      const author = await object.getAttribution();
+      if (!isActor(author) || author.id?.href !== actor.href) return;
 
-    // replyTarget가 있어야 댓글로 처리
-    const replyTarget = await object.getReplyTarget();
-    if (replyTarget == null || !(replyTarget instanceof Note)) {
-      log("The Note does not have an replyTarget, skipping");
-      return;
-    }
-
-    const uri = replyTarget.id?.toString();
-
-    // 먼저 포스트에 대한 댓글인지 확인
-    const post = await prisma.posts.findFirst({
-      where: { uri },
-    });
-
-    // 기존 댓글에 대한 답글인지 확인
-    const parentComment = await prisma.comment.findFirst({
-      where: { uri },
-    });
-
-    // 포스트도 아니고 댓글도 아니면 무시
-    if (!post && !parentComment) {
-      log("replyTarget target not found in posts or comments");
-      return;
-    }
-
-    // actor 저장
-    const actorRecord = await upsertActor(author);
-    if (!actorRecord) return;
-
-    if (object.id == null) return;
-    const content = object.content?.toString() || "";
-    const attachments = object.getAttachments();
-
-    const formattedAttachments = [];
-
-    for await (const attachment of attachments) {
-      if (attachment instanceof Document) {
-        formattedAttachments.push({
-          url: attachment.url?.toString() || "",
-          mediaType: attachment.mediaType,
-          sensitive: attachment.sensitive || false,
-          name: attachment.name?.toString(),
-        });
+      // replyTarget가 있어야 댓글로 처리
+      const replyTarget = await object.getReplyTarget();
+      if (replyTarget == null || !(replyTarget instanceof Note)) {
+        log("The Note does not have an replyTarget, skipping");
+        return;
       }
+
+      const uri = replyTarget.id?.toString();
+
+      // 먼저 포스트에 대한 댓글인지 확인
+      const post = await prisma.posts.findFirst({
+        where: { uri },
+      });
+
+      // 기존 댓글에 대한 답글인지 확인
+      const parentComment = await prisma.comment.findFirst({
+        where: { uri },
+      });
+
+      // 포스트도 아니고 댓글도 아니면 무시
+      if (!post && !parentComment) {
+        log("replyTarget target not found in posts or comments");
+        return;
+      }
+
+      // actor 저장
+      const actorRecord = await upsertActor(author);
+      if (!actorRecord) return;
+
+      if (object.id == null) return;
+      const content = object.content?.toString() || "";
+      const attachments = object.getAttachments();
+
+      const formattedAttachments = [];
+
+      for await (const attachment of attachments) {
+        if (attachment instanceof Document) {
+          formattedAttachments.push({
+            url: attachment.url?.toString() || "",
+            mediaType: attachment.mediaType,
+            sensitive: attachment.sensitive || false,
+            name: attachment.name?.toString(),
+          });
+        }
+      }
+
+      const tags = (await object.toJsonLd()) as
+        | {
+            tag?: { type: string; href: string; name: string }[];
+          }
+        | { type: string; href: string; name: string };
+
+      const mentions = getTagFromNote(object);
+
+      // 댓글 저장 (대댓글인 경우 parentId와 해당 댓글의 postId 사용)
+      await prisma.comment.create({
+        data: {
+          uri: object.id.href,
+          actorId: actorRecord.id,
+          postId: post?.id ?? parentComment!.postId,
+          parentId: parentComment?.id ?? null,
+          content,
+          url: object.url?.href?.toString(),
+          to: object.toIds.map((to) => to.href),
+          cc: object.ccIds.map((cc) => cc.href),
+          mentions,
+          attachment: { createMany: { data: formattedAttachments } },
+        },
+      });
+
+      log(`Saved comment: ${object.id.href}`);
+    } catch (error) {
+      log("Error processing Create activity:", error);
     }
-
-    // 댓글 저장 (대댓글인 경우 parentId와 해당 댓글의 postId 사용)
-    await prisma.comment.create({
-      data: {
-        uri: object.id.href,
-        actorId: actorRecord.id,
-        postId: post?.id ?? parentComment!.postId,
-        parentId: parentComment?.id ?? null,
-        content,
-        url: object.url?.href?.toString(),
-        attachment: { createMany: { data: formattedAttachments } },
-      },
-    });
-
-    log(`Saved comment: ${object.id.href}`);
   })
   .on(Delete, async (ctx, del) => {
     log(`Received Delete activity: ${del.id?.href}`);
@@ -446,41 +451,104 @@ federation
 federation.setObjectDispatcher(Note, "/post/{slug}", async (ctx, values) => {
   log(`Dispatching Note object for slug: ${values.slug}`);
 
-  const post = await prisma.posts.findFirst({
-    where: {
-      slug: values.slug,
-    },
-    include: {
-      user: true,
-      banner: true,
-      actor: true,
-    },
-  });
+  // Check if slug contains UUID pattern (comment vs post)
+  // Comment slug format: postSlug-uuid
+  // UUID pattern: 8-4-4-4-12 hex digits
+  const uuidPattern =
+    /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const isComment = uuidPattern.test(values.slug);
+  if (isComment) {
+    // Handle comment
+    log(`Detected comment slug: ${values.slug}`);
 
-  if (!post) return null;
+    const commentUri = ctx.getObjectUri(Note, values).href;
+    const comment = await prisma.comment.findFirst({
+      where: { uri: commentUri },
+      include: {
+        actor: true,
+        attachment: true,
+        post: true,
+        parent: {
+          select: {
+            uri: true,
+          },
+        },
+      },
+    });
 
-  const content = `<a href="${post.uri}">${post.title}</a> (작성자: ${post.user.name} - 마지막 수정 ${format(post.updatedAt, "yyyy/MM/dd")})<br />${post.content}`;
+    if (!comment) {
+      log(`Comment not found for URI: ${commentUri}`);
+      return null;
+    }
 
-  return new Note({
-    id: ctx.getObjectUri(Note, values),
-    attribution: ctx.getActorUri(post.actor.username),
-    to: PUBLIC_COLLECTION,
-    cc: ctx.getFollowersUri(post.actor.username),
-    content,
-    mediaType: "text/html",
-    published: Temporal.Instant.from(
-      post.publishedAt
-        ? post.publishedAt.toISOString()
-        : post.createdAt.toISOString(),
-    ),
-    url: ctx.getObjectUri(Note, values),
-    attachments: post.banner
-      ? [
-          new Document({
-            url: new URL(post.banner.url),
+    const toRecipients = comment.to.map((uri) => new URL(uri));
+    const ccRecipients = comment.cc.map((uri) => new URL(uri));
+
+    return new Note({
+      id: new URL(comment.uri),
+      attribution: new URL(comment.actor.uri),
+      tos: toRecipients,
+      ccs: ccRecipients,
+      tags: (comment.mentions as { href: string; name: string }[]).map(
+        (mention) =>
+          new Mention({
+            id: new URL(mention.href),
+            name: mention.name,
           }),
-        ]
-      : undefined,
-  });
+      ),
+      content: comment.content,
+      mediaType: "text/html",
+      replyTarget: comment.parent
+        ? new URL(comment.parent.uri)
+        : new URL(comment.post.uri),
+      attachments: comment.attachment.map(
+        (att) =>
+          new Document({
+            url: new URL(att.url),
+            mediaType: att.mediaType ?? undefined,
+          }),
+      ),
+      published: Temporal.Instant.from(comment.createdAt.toISOString()),
+      url: new URL(comment.url ?? comment.uri),
+    });
+  } else {
+    // Handle post (existing logic)
+    const post = await prisma.posts.findFirst({
+      where: {
+        slug: values.slug,
+      },
+      include: {
+        user: true,
+        banner: true,
+        actor: true,
+      },
+    });
+
+    if (!post) return null;
+
+    const content = `<a href="${post.uri}">${post.title}</a> (작성자: ${post.user.name} - 마지막 수정 ${format(post.updatedAt, "yyyy/MM/dd")})<br />${post.content}`;
+
+    return new Note({
+      id: ctx.getObjectUri(Note, values),
+      attribution: ctx.getActorUri(post.actor.username),
+      to: PUBLIC_COLLECTION,
+      cc: ctx.getFollowersUri(post.actor.username),
+      content,
+      mediaType: "text/html",
+      published: Temporal.Instant.from(
+        post.publishedAt
+          ? post.publishedAt.toISOString()
+          : post.createdAt.toISOString(),
+      ),
+      url: ctx.getObjectUri(Note, values),
+      attachments: post.banner
+        ? [
+            new Document({
+              url: new URL(post.banner.url),
+            }),
+          ]
+        : undefined,
+    });
+  }
 });
 export { federation };
