@@ -26,7 +26,7 @@ export function PostList() {
   return (
     <>
       <section className="relative mx-auto mb-8 grid max-w-[880px] gap-4 rounded-[26px] border-2 border-[#d8d0c5] bg-[#fffdf5] p-8 shadow-[var(--shadow)] before:pointer-events-none before:absolute before:inset-2.5 before:rounded-[inherit] before:border before:border-dashed before:border-[#a46d43]/20 max-[900px]:p-5">
-        <h1 className="relative z-10">윤서아의 블로그</h1>
+        <h1 className="relative z-10 text-3xl font-bold">윤서아의 블로그</h1>
         <p className="relative z-10 m-0 max-w-[36rem] text-[1.05rem] text-[#40342b]">
           종이 위에 메모를 쌓아두듯, 천천히 읽고 오래 남는 글들을 정리하는 공간입니다.
         </p>
@@ -44,7 +44,7 @@ export function PostList() {
 
       <section className="mt-10">
         <div className="mx-auto mb-4 max-w-[880px] px-2">
-          <h2>최근 글 목록</h2>
+          <h2 className="text-2xl font-bold">최근 글 목록</h2>
           <p className="muted mt-2">메모장에 꽂아둔 최신 글들</p>
         </div>
 
@@ -106,7 +106,7 @@ export function PostCard({
             {format(post.publishedAt, "yyyy-MM-dd")}
           </p>
         )}
-        <h3>{post.title}</h3>
+        <h3 className="text-xl font-bold">{post.title}</h3>
         {excerpt && <p className="m-0 text-[#655648]">{excerpt}</p>}
       </div>
     </Link>

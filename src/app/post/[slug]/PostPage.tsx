@@ -33,7 +33,7 @@ export function PostPage({ slug }: { slug: string }) {
 
       <section className="relative rounded-[30px] border-2 border-[#d8d0c5] bg-[#fffdf5]/95 p-8 shadow-[var(--shadow)] before:pointer-events-none before:absolute before:inset-2.5 before:rounded-[inherit] before:border before:border-dashed before:border-[#a46d43]/20 max-[900px]:p-5">
         <div className="relative z-10 flex flex-wrap items-start justify-between gap-3">
-          <h1 className="flex items-center gap-2">
+          <h1 className="flex items-center gap-2 text-3xl font-bold">
             {post.title}
             {post.state === "draft" && <Badge>임시글</Badge>}
           </h1>
@@ -61,7 +61,7 @@ export function PostPage({ slug }: { slug: string }) {
 
       <section className="relative rounded-[30px] border-2 border-[#d8d0c5] bg-[#fffdf5]/95 p-8 shadow-[var(--shadow)] before:pointer-events-none before:absolute before:inset-2.5 before:rounded-[inherit] before:border before:border-dashed before:border-[#a46d43]/20 max-[900px]:p-5">
         <div className="relative z-10">
-          <h3 className="mb-3">댓글</h3>
+          <h3 className="mb-3 text-xl font-bold">댓글</h3>
           <PostComments comments={comments} slug={slug} />
         </div>
       </section>
