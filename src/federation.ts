@@ -27,7 +27,7 @@ import { Redis } from "ioredis";
 
 import { Keys as Key } from "./generated/prisma";
 import { prisma } from "./lib/prisma";
-import { getTagFromNote, upsertActor } from "./lib/utils-federation";
+import { getTagFromNote, isUniqueConstraintError, upsertActor } from "./lib/utils-federation";
 
 const log = debug("blog:federation");
 
@@ -48,7 +48,7 @@ federation
     log(`Dispatching actor for identifier: ${identifier}`);
 
     const actor = await prisma.actor.findFirst({
-      where: { username: identifier },
+      where: { username: identifier, userId: { not: null } },
       include: { avatar: true, banner: true },
     });
 
@@ -64,9 +64,12 @@ federation
       name: actor.name,
       summary: actor.summary,
       inbox: new URL(actor.inboxUrl),
-      endpoints: new Endpoints({
-        sharedInbox: new URL(actor.sharedInboxUrl!),
-      }),
+      outbox: ctx.getOutboxUri(identifier),
+      endpoints: actor.sharedInboxUrl
+        ? new Endpoints({
+            sharedInbox: new URL(actor.sharedInboxUrl),
+          })
+        : undefined,
       url: new URL(actor.uri),
       publicKey: keys[0].cryptographicKey,
       assertionMethods: keys.map((k) => k.multikey),
@@ -83,7 +86,7 @@ federation
     log(`Dispatching key pairs for identifier: ${identifier}`);
 
     const actor = await prisma.actor.findFirst({
-      where: { username: identifier },
+      where: { username: identifier, userId: { not: null } },
       include: { keys: true },
     });
 
@@ -103,15 +106,25 @@ federation
       if (keys[keyType] == null) {
         log(`The user ${identifier} does not have an ${keyType} key; creating one...`);
         const { privateKey, publicKey } = await generateCryptoKeyPair(keyType);
-        await prisma.keys.create({
-          data: {
+        const key = await prisma.keys.upsert({
+          where: {
+            actorId_type: {
+              actorId: actor.id,
+              type: keyType,
+            },
+          },
+          create: {
             actorId: actor.id,
             type: keyType,
             privateKey: JSON.stringify(await exportJwk(privateKey)),
             publicKey: JSON.stringify(await exportJwk(publicKey)),
           },
+          update: {},
         });
-        pairs.push({ privateKey, publicKey });
+        pairs.push({
+          privateKey: await importJwk(JSON.parse(key.privateKey), "private"),
+          publicKey: await importJwk(JSON.parse(key.publicKey), "public"),
+        });
       } else {
         pairs.push({
           privateKey: await importJwk(JSON.parse(keys[keyType].privateKey), "private"),
@@ -174,7 +187,12 @@ federation
         },
       });
     } catch (error) {
-      log("Error creating follow relationship:", error);
+      if (!isUniqueConstraintError(error)) {
+        log("Error creating follow relationship:", error);
+        return;
+      }
+
+      log("Follow relationship already exists; accepting again:", error);
 
       const accept = new Accept({
         actor: follow.objectId,
@@ -236,12 +254,10 @@ federation
 
     log(`Processing unfollow from ${followerActor?.handle} to @${followingActor?.handle}`);
 
-    await prisma.follows.delete({
+    await prisma.follows.deleteMany({
       where: {
-        followingId_followerId: {
-          followingId: followingActor.id,
-          followerId: followerActor.id,
-        },
+        followingId: followingActor.id,
+        followerId: followerActor.id,
       },
     });
   })
@@ -306,21 +322,29 @@ federation
 
       const mentions = getTagFromNote(object);
 
-      // 댓글 저장 (대댓글인 경우 parentId와 해당 댓글의 postId 사용)
-      await prisma.comment.create({
-        data: {
-          uri: object.id.href,
-          actorId: actorRecord.id,
-          postId: post?.id ?? parentComment!.postId,
-          parentId: parentComment?.id ?? null,
-          content,
-          url: object.url?.href?.toString(),
-          to: object.toIds.map((to) => to.href),
-          cc: object.ccIds.map((cc) => cc.href),
-          mentions,
-          attachment: { createMany: { data: formattedAttachments } },
-        },
-      });
+      try {
+        // 댓글 저장 (대댓글인 경우 parentId와 해당 댓글의 postId 사용)
+        await prisma.comment.create({
+          data: {
+            uri: object.id.href,
+            actorId: actorRecord.id,
+            postId: post?.id ?? parentComment!.postId,
+            parentId: parentComment?.id ?? null,
+            content,
+            url: object.url?.href?.toString(),
+            to: object.toIds.map((to) => to.href),
+            cc: object.ccIds.map((cc) => cc.href),
+            mentions,
+            attachment: { createMany: { data: formattedAttachments } },
+          },
+        });
+      } catch (error) {
+        if (isUniqueConstraintError(error)) {
+          log(`Comment already exists, skipping duplicate Create: ${object.id.href}`);
+          return;
+        }
+        throw error;
+      }
 
       log(`Saved comment: ${object.id.href}`);
     } catch (error) {
@@ -386,12 +410,32 @@ federation
       }
 
       const content = object.content?.toString() || "";
+      const attachments = object.getAttachments();
+      const formattedAttachments = [];
+
+      for await (const attachment of attachments) {
+        if (attachment instanceof Document) {
+          formattedAttachments.push({
+            url: attachment.url?.toString() || "",
+            mediaType: attachment.mediaType,
+            sensitive: attachment.sensitive || false,
+            name: attachment.name?.toString(),
+          });
+        }
+      }
 
       await prisma.comment.update({
         where: { id: comment.id },
         data: {
           content,
           url: object.url?.href?.toString(),
+          to: object.toIds.map((to) => to.href),
+          cc: object.ccIds.map((cc) => cc.href),
+          mentions: getTagFromNote(object),
+          attachment: {
+            deleteMany: {},
+            createMany: { data: formattedAttachments },
+          },
         },
       });
 

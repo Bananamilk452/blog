@@ -72,11 +72,11 @@ export async function updateMainActor({
     });
 
     const context = federation.createContext(new Request(process.env.PUBLIC_URL!), undefined);
-    const actor = await context.getActor(a.handle);
+    const actor = await context.getActor(a.username);
 
     if (actor) {
       await context.sendActivity(
-        { identifier: a.handle },
+        { identifier: a.username },
         "followers",
         new Update({
           actor: actor.id,

@@ -7,6 +7,7 @@ import {
   Mention,
   Note,
   PUBLIC_COLLECTION,
+  Recipient,
   Update,
 } from "@fedify/fedify";
 import { Temporal } from "@js-temporal/polyfill";
@@ -211,27 +212,24 @@ export async function deletePost(postId: string) {
 
   const username = mainActor.actor.username;
 
-  const deletedPost = await prisma.$transaction(async (tx) => {
-    const post = await tx.posts.delete({ where: { id: postId } });
+  const post = await prisma.posts.findUniqueOrThrow({ where: { id: postId } });
+  const note = post.state === "published" ? await ctx.getObject(Note, { slug: post.slug! }) : null;
 
-    if (post.state === "published") {
-      const noteArgs = { slug: post.slug! };
-      const note = await ctx.getObject(Note, noteArgs);
-      await ctx.sendActivity(
-        { identifier: username },
-        "followers",
-        new Delete({
-          id: new URL("#activity", note?.id ?? undefined),
-          object: note,
-          actors: note?.attributionIds,
-          tos: note?.toIds,
-          ccs: note?.ccIds,
-        }),
-      );
-    }
+  const deletedPost = await prisma.posts.delete({ where: { id: postId } });
 
-    return post;
-  });
+  if (note) {
+    await ctx.sendActivity(
+      { identifier: username },
+      "followers",
+      new Delete({
+        id: new URL("#activity", note.id ?? undefined),
+        object: note,
+        actors: note.attributionIds,
+        tos: note.toIds,
+        ccs: note.ccIds,
+      }),
+    );
+  }
 
   return deletedPost;
 }
@@ -446,7 +444,7 @@ export async function createComment(
         },
       });
 
-      if (isPublic(parentComment.to, parentComment.cc)) {
+      if (isPublic([...parentComment.to, ...parentComment.cc])) {
         toRecipients.push(PUBLIC_COLLECTION.href);
         ccRecipients.push(
           ctx.getFollowersUri(username).href,
@@ -532,46 +530,74 @@ export async function createComment(
       throw new Error("Failed to retrieve Note object for the post");
     }
 
-    await ctx.sendActivity(
-      { identifier: username },
-      mentionActors,
-      new Create({
-        id: new URL("#activity", note?.id ?? undefined),
-        actors: note?.attributionIds,
+    const directRecipientMap = new Map<string, Actor | Recipient>();
+
+    for (const actor of mentionActors) {
+      if (actor.id?.href !== mainActor.actor.uri) {
+        directRecipientMap.set(actor.id!.href, actor);
+      }
+    }
+
+    if (data.parentId) {
+      const parentComment = await prisma.comment.findUnique({
+        where: { id: data.parentId },
+        include: { actor: true },
+      });
+
+      if (parentComment && parentComment.actor.uri !== mainActor.actor.uri) {
+        directRecipientMap.set(parentComment.actor.uri, {
+          id: new URL(parentComment.actor.uri),
+          inboxId: new URL(parentComment.actor.inboxUrl),
+          endpoints: parentComment.actor.sharedInboxUrl
+            ? { sharedInbox: new URL(parentComment.actor.sharedInboxUrl) }
+            : null,
+        });
+      }
+    }
+
+    const create = new Create({
+      id: new URL("#activity", note?.id ?? undefined),
+      actors: note?.attributionIds,
+      tos: note?.toIds,
+      ccs: note?.ccIds,
+      object: new Note({
+        id: new URL(comment.uri),
+        attribution: new URL(mainActor.actor.uri),
         tos: note?.toIds,
         ccs: note?.ccIds,
-        object: new Note({
-          id: new URL(comment.uri),
-          attribution: new URL(mainActor.actor.uri),
-          tos: note?.toIds,
-          ccs: note?.ccIds,
-          content: sanitizedContent,
-          replyTarget: data.parentId
-            ? await prisma.comment
-                .findUnique({
-                  where: { id: data.parentId },
-                  select: { uri: true },
-                })
-                .then((c) => (c ? new URL(c.uri) : undefined))
-            : new URL(`${process.env.PUBLIC_URL}/post/${post.slug}`),
-          attachments: data.images?.map(
-            (img) =>
-              new Document({
-                url: new URL(img.url),
-                mediaType: img.mediaType,
-              }),
-          ),
-          published: Temporal.Instant.from(comment.createdAt.toISOString()),
-          tags: mentionActors.map(
-            (actor) =>
-              new Mention({
-                href: actor.id,
-                name: actor.preferredUsername,
-              }),
-          ),
-        }),
+        content: sanitizedContent,
+        replyTarget: data.parentId
+          ? await prisma.comment
+              .findUnique({
+                where: { id: data.parentId },
+                select: { uri: true },
+              })
+              .then((c) => (c ? new URL(c.uri) : undefined))
+          : new URL(`${process.env.PUBLIC_URL}/post/${post.slug}`),
+        attachments: data.images?.map(
+          (img) =>
+            new Document({
+              url: new URL(img.url),
+              mediaType: img.mediaType,
+            }),
+        ),
+        published: Temporal.Instant.from(comment.createdAt.toISOString()),
+        tags: mentionActors.map(
+          (actor) =>
+            new Mention({
+              href: actor.id,
+              name: actor.preferredUsername,
+            }),
+        ),
       }),
-    );
+    });
+
+    await ctx.sendActivity({ identifier: username }, "followers", create);
+
+    const directRecipients = [...directRecipientMap.values()];
+    if (directRecipients.length > 0) {
+      await ctx.sendActivity({ identifier: username }, directRecipients, create);
+    }
   } catch (error) {
     // Log federation errors but don't fail the comment creation
     console.error("Failed to send Create activity for comment:", error);

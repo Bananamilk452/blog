@@ -128,13 +128,21 @@ export function isFollowersOnly(toIds: URL[] | string[], ccIds: URL[] | string[]
 export function getTagFromNote(note: Note) {
   const json = note.toJsonLd() as
     | {
-        tag?: { type: string; href: string; name: string }[];
+        tag?:
+          | { type: string; href?: string; name?: string }
+          | { type: string; href?: string; name?: string }[];
       }
-    | { type: string; href: string; name: string };
+    | { type: string; href?: string; name?: string };
 
-  if ("tag" in json && Array.isArray(json.tag)) {
-    return json.tag;
-  } else {
-    return [json];
-  }
+  const tags = "tag" in json ? json.tag : undefined;
+  const tagArray = Array.isArray(tags) ? tags : tags == null ? [] : [tags];
+
+  return tagArray.filter(
+    (tag): tag is { type: string; href: string; name: string } =>
+      tag.type === "Mention" && typeof tag.href === "string" && typeof tag.name === "string",
+  );
+}
+
+export function isUniqueConstraintError(error: unknown) {
+  return typeof error === "object" && error != null && "code" in error && error.code === "P2002";
 }

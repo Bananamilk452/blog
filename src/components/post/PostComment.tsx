@@ -198,7 +198,7 @@ function ReplyEditor({
     },
   });
 
-  const { mutate: createComment, status } = useCreateComment(slug);
+  const { mutate: createComment, status } = useCreateComment();
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
