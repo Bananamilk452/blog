@@ -43,98 +43,489 @@ const federation = createFederation({
   origin: new URL(process.env.PUBLIC_URL!).origin,
 });
 
-federation
-  .setActorDispatcher("/users/{identifier}", async (ctx, identifier) => {
-    log(`Dispatching actor for identifier: ${identifier}`);
+export async function dispatchActor(ctx: any, identifier: string) {
+  log(`Dispatching actor for identifier: ${identifier}`);
 
-    const actor = await prisma.actor.findFirst({
-      where: { username: identifier, userId: { not: null } },
-      include: { avatar: true, banner: true },
+  const actor = await prisma.actor.findFirst({
+    where: { username: identifier, userId: { not: null } },
+    include: { avatar: true, banner: true },
+  });
+
+  if (!actor) return null;
+
+  const keys = await ctx.getActorKeyPairs(identifier);
+
+  return new Person({
+    id: new URL(actor.uri),
+    preferredUsername: identifier,
+    name: actor.name,
+    summary: actor.summary,
+    inbox: new URL(actor.inboxUrl),
+    outbox: ctx.getOutboxUri(identifier),
+    endpoints: actor.sharedInboxUrl
+      ? new Endpoints({
+          sharedInbox: new URL(actor.sharedInboxUrl),
+        })
+      : undefined,
+    url: new URL(actor.uri),
+    publicKey: keys[0]?.cryptographicKey,
+    assertionMethods: keys.map((k: any) => k.multikey),
+    followers: ctx.getFollowersUri(identifier),
+    icon: new Image({
+      url: actor.avatar?.url ? new URL(actor.avatar?.url) : undefined,
+    }),
+    image: new Image({
+      url: actor.banner?.url ? new URL(actor.banner?.url) : undefined,
+    }),
+  });
+}
+
+export async function dispatchKeyPairs(_ctx: any, identifier: string) {
+  log(`Dispatching key pairs for identifier: ${identifier}`);
+
+  const actor = await prisma.actor.findFirst({
+    where: { username: identifier, userId: { not: null } },
+    include: { keys: true },
+  });
+
+  if (!actor) return [];
+
+  const keys = Object.fromEntries(actor.keys.map((k) => [k.type, k])) as Record<Key["type"], Key>;
+  const pairs: CryptoKeyPair[] = [];
+
+  for (const keyType of ["RSASSA-PKCS1-v1_5", "Ed25519"] as const) {
+    if (keys[keyType] == null) {
+      log(`The user ${identifier} does not have an ${keyType} key; creating one...`);
+      const { privateKey, publicKey } = await generateCryptoKeyPair(keyType);
+      const key = await prisma.keys.upsert({
+        where: {
+          actorId_type: {
+            actorId: actor.id,
+            type: keyType,
+          },
+        },
+        create: {
+          actorId: actor.id,
+          type: keyType,
+          privateKey: JSON.stringify(await exportJwk(privateKey)),
+          publicKey: JSON.stringify(await exportJwk(publicKey)),
+        },
+        update: {},
+      });
+      pairs.push({
+        privateKey: await importJwk(JSON.parse(key.privateKey), "private"),
+        publicKey: await importJwk(JSON.parse(key.publicKey), "public"),
+      });
+    } else {
+      pairs.push({
+        privateKey: await importJwk(JSON.parse(keys[keyType].privateKey), "private"),
+        publicKey: await importJwk(JSON.parse(keys[keyType].publicKey), "public"),
+      });
+    }
+  }
+
+  return pairs;
+}
+
+export async function handleFollow(ctx: any, follow: Follow) {
+  log(`Received Follow activity: ${follow.id?.href}`);
+
+  if (follow.objectId == null) {
+    log("The Follow object does not have an object:", follow);
+    return;
+  }
+
+  const object = ctx.parseUri(follow.objectId);
+  if (object == null || object.type !== "actor") {
+    log("The Follow object's object is not an actor:", follow);
+    return;
+  }
+
+  const follower = await follow.getActor();
+  if (follower?.id == null || follower.inboxId == null) {
+    log("The Follow object does not have an actor:", follow);
+    return;
+  }
+
+  const followingId = (
+    await prisma.actor.findFirst({
+      where: {
+        user: {
+          username: object.identifier,
+        },
+      },
+    })
+  )?.id;
+
+  if (followingId == null) {
+    log("Failed to find the actor to follow in the database:", object);
+    return;
+  }
+
+  const followerId = (await upsertActor(follower)).id;
+
+  try {
+    await prisma.follows.create({
+      data: {
+        followingId,
+        followerId,
+      },
+    });
+  } catch (error) {
+    if (!isUniqueConstraintError(error)) {
+      log("Error creating follow relationship:", error);
+      return;
+    }
+
+    log("Follow relationship already exists; accepting again:", error);
+  }
+
+  await ctx.sendActivity(
+    { identifier: object.identifier },
+    follower,
+    new Accept({
+      actor: follow.objectId,
+      to: follow.actorId,
+      object: follow,
+    }),
+    { immediate: true },
+  );
+}
+
+export async function handleUndo(ctx: any, undo: Undo) {
+  log(`Received Undo activity: ${undo.id?.href}`);
+
+  const object = await undo.getObject();
+  if (!(object instanceof Follow)) return;
+  if (undo.actorId == null || object.objectId == null) return;
+  const parsed = ctx.parseUri(object.objectId);
+  if (parsed == null || parsed.type !== "actor") return;
+
+  const followingActor = await prisma.actor.findFirst({
+    where: {
+      user: {
+        username: parsed.identifier,
+      },
+    },
+  });
+
+  const followerActor = await prisma.actor.findFirst({
+    where: {
+      uri: undo.actorId.href,
+    },
+  });
+
+  if (!followingActor || !followerActor) {
+    log("Either following or follower actor not found.");
+    return;
+  }
+
+  await prisma.follows.deleteMany({
+    where: {
+      followingId: followingActor.id,
+      followerId: followerActor.id,
+    },
+  });
+}
+
+async function formatNoteAttachments(note: Note) {
+  const formattedAttachments = [];
+  for await (const attachment of note.getAttachments()) {
+    if (attachment instanceof Document) {
+      formattedAttachments.push({
+        url: attachment.url?.toString() || "",
+        mediaType: attachment.mediaType,
+        sensitive: attachment.sensitive || false,
+        name: attachment.name?.toString(),
+      });
+    }
+  }
+  return formattedAttachments;
+}
+
+export async function handleCreate(ctx: any, create: Create) {
+  try {
+    log(`Received Create activity: ${create.id?.href}`);
+
+    const object = await create.getObject();
+    if (!(object instanceof Note)) return;
+
+    const actor = create.actorId;
+    if (actor == null) return;
+
+    const author = await object.getAttribution();
+    if (!isActor(author) || author.id?.href !== actor.href) return;
+
+    const replyTarget = await object.getReplyTarget();
+    if (replyTarget == null || !(replyTarget instanceof Note)) {
+      log("The Note does not have an replyTarget, skipping");
+      return;
+    }
+
+    const uri = replyTarget.id?.toString();
+    const post = await prisma.posts.findFirst({ where: { uri } });
+    const parentComment = await prisma.comment.findFirst({ where: { uri } });
+
+    if (!post && !parentComment) {
+      log("replyTarget target not found in posts or comments");
+      return;
+    }
+
+    const actorRecord = await upsertActor(author);
+    if (!actorRecord || object.id == null) return;
+
+    try {
+      await prisma.comment.create({
+        data: {
+          uri: object.id.href,
+          actorId: actorRecord.id,
+          postId: post?.id ?? parentComment!.postId,
+          parentId: parentComment?.id ?? null,
+          content: object.content?.toString() || "",
+          url: object.url?.href?.toString(),
+          to: object.toIds.map((to) => to.href),
+          cc: object.ccIds.map((cc) => cc.href),
+          mentions: getTagFromNote(object),
+          attachment: { createMany: { data: await formatNoteAttachments(object) } },
+        },
+      });
+    } catch (error) {
+      if (isUniqueConstraintError(error)) {
+        log(`Comment already exists, skipping duplicate Create: ${object.id.href}`);
+        return;
+      }
+      throw error;
+    }
+
+    log(`Saved comment: ${object.id.href}`);
+  } catch (error) {
+    log("Error processing Create activity:", error);
+  }
+}
+
+export async function handleDelete(_ctx: any, del: Delete) {
+  log(`Received Delete activity: ${del.id?.href}`);
+
+  const objectId = del.objectId;
+  if (objectId == null) {
+    log("The Delete object does not have an objectId:", del);
+    return;
+  }
+
+  const comment = await prisma.comment.findFirst({
+    where: { uri: objectId.href },
+    include: { actor: true },
+  });
+
+  if (!comment) {
+    log(`Comment not found for deletion: ${objectId.href}`);
+    return;
+  }
+
+  if (del.actorId?.href !== comment.actor.uri) {
+    log(
+      `Unauthorized delete attempt. Request actor: ${del.actorId?.href}, Comment actor: ${comment.actor.uri}`,
+    );
+    return;
+  }
+
+  await prisma.comment.delete({ where: { id: comment.id } });
+  log(`Deleted comment: ${comment.id}`);
+}
+
+export async function handleUpdate(_ctx: any, update: Update) {
+  log(`Received Update activity: ${update.id?.href}`);
+
+  const object = await update.getObject();
+  if (!object) return;
+
+  if (object instanceof Note) {
+    if (object.id == null) return;
+
+    const comment = await prisma.comment.findFirst({
+      where: { uri: object.id.href },
+      include: { actor: true },
     });
 
-    if (!actor) {
+    if (!comment) {
+      log(`Comment not found for update: ${object.id.href}`);
+      return;
+    }
+
+    if (update.actorId?.href !== comment.actor.uri) {
+      log(
+        `Unauthorized update attempt. Request actor: ${update.actorId?.href}, Comment actor: ${comment.actor.uri}`,
+      );
+      return;
+    }
+
+    await prisma.comment.update({
+      where: { id: comment.id },
+      data: {
+        content: object.content?.toString() || "",
+        url: object.url?.href?.toString(),
+        to: object.toIds.map((to) => to.href),
+        cc: object.ccIds.map((cc) => cc.href),
+        mentions: getTagFromNote(object),
+        attachment: {
+          deleteMany: {},
+          createMany: { data: await formatNoteAttachments(object) },
+        },
+      },
+    });
+
+    log(`Updated comment: ${comment.id}`);
+    return;
+  }
+
+  if (isActor(object)) {
+    if (update.actorId?.href !== object.id?.href) {
+      log("Unauthorized actor update attempt: Actor can only update themselves");
+      return;
+    }
+
+    await upsertActor(object);
+    log(`Updated actor profile: ${object.id?.href}`);
+  }
+}
+
+export async function dispatchFollowers(_ctx: any, identifier: string) {
+  log(`Dispatching followers for identifier: ${identifier}`);
+
+  const followers = await prisma.follows.findMany({
+    where: {
+      following: {
+        user: {
+          username: identifier,
+        },
+      },
+    },
+    include: {
+      follower: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  const items: Recipient[] = followers.map((f) => ({
+    id: new URL(f.follower.uri),
+    inboxId: new URL(f.follower.inboxUrl),
+    endpoints:
+      f.follower.sharedInboxUrl == null
+        ? null
+        : { sharedInbox: new URL(f.follower.sharedInboxUrl) },
+  }));
+
+  return { items };
+}
+
+export async function countFollowers(_ctx: any, identifier: string) {
+  log(`Counting followers for identifier: ${identifier}`);
+
+  return await prisma.follows.count({
+    where: {
+      following: {
+        user: {
+          username: identifier,
+        },
+      },
+    },
+  });
+}
+
+export async function dispatchNote(ctx: any, values: { slug: string }) {
+  log(`Dispatching Note object for slug: ${values.slug}`);
+
+  const uuidPattern = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const isComment = uuidPattern.test(values.slug);
+  if (isComment) {
+    const commentUri = ctx.getObjectUri(Note, values).href;
+    const comment = await prisma.comment.findFirst({
+      where: { uri: commentUri },
+      include: {
+        actor: true,
+        attachment: true,
+        post: true,
+        parent: {
+          select: {
+            uri: true,
+          },
+        },
+      },
+    });
+
+    if (!comment) {
+      log(`Comment not found for URI: ${commentUri}`);
       return null;
     }
 
-    const keys = await ctx.getActorKeyPairs(identifier);
-
-    return new Person({
-      id: new URL(actor.uri),
-      preferredUsername: identifier,
-      name: actor.name,
-      summary: actor.summary,
-      inbox: new URL(actor.inboxUrl),
-      outbox: ctx.getOutboxUri(identifier),
-      endpoints: actor.sharedInboxUrl
-        ? new Endpoints({
-            sharedInbox: new URL(actor.sharedInboxUrl),
-          })
-        : undefined,
-      url: new URL(actor.uri),
-      publicKey: keys[0].cryptographicKey,
-      assertionMethods: keys.map((k) => k.multikey),
-      followers: ctx.getFollowersUri(identifier),
-      icon: new Image({
-        url: actor.avatar?.url ? new URL(actor.avatar?.url) : undefined,
-      }),
-      image: new Image({
-        url: actor.banner?.url ? new URL(actor.banner?.url) : undefined,
-      }),
+    return new Note({
+      id: new URL(comment.uri),
+      attribution: new URL(comment.actor.uri),
+      tos: comment.to.map((uri) => new URL(uri)),
+      ccs: comment.cc.map((uri) => new URL(uri)),
+      tags: (comment.mentions as { href: string; name: string }[]).map(
+        (mention) =>
+          new Mention({
+            id: new URL(mention.href),
+            name: mention.name,
+          }),
+      ),
+      content: comment.content,
+      mediaType: "text/html",
+      replyTarget: comment.parent ? new URL(comment.parent.uri) : new URL(comment.post.uri),
+      attachments: comment.attachment.map(
+        (att) =>
+          new Document({
+            url: new URL(att.url),
+            mediaType: att.mediaType ?? undefined,
+          }),
+      ),
+      published: Temporal.Instant.from(comment.createdAt.toISOString()),
+      url: new URL(comment.url ?? comment.uri),
     });
-  })
-  .setKeyPairsDispatcher(async (ctx, identifier) => {
-    log(`Dispatching key pairs for identifier: ${identifier}`);
+  }
 
-    const actor = await prisma.actor.findFirst({
-      where: { username: identifier, userId: { not: null } },
-      include: { keys: true },
-    });
-
-    if (!actor) {
-      return [];
-    }
-
-    const keys = Object.fromEntries(actor?.keys.map((k) => [k.type, k])) as Record<
-      Key["type"],
-      Key
-    >;
-    const pairs: CryptoKeyPair[] = [];
-
-    // 사용자가 지원하는 두 키 형식 (RSASSA-PKCS1-v1_5 및 Ed25519) 각각에 대해
-    // 키 쌍을 보유하고 있는지 확인하고, 없으면 생성 후 데이터베이스에 저장:
-    for (const keyType of ["RSASSA-PKCS1-v1_5", "Ed25519"] as const) {
-      if (keys[keyType] == null) {
-        log(`The user ${identifier} does not have an ${keyType} key; creating one...`);
-        const { privateKey, publicKey } = await generateCryptoKeyPair(keyType);
-        const key = await prisma.keys.upsert({
-          where: {
-            actorId_type: {
-              actorId: actor.id,
-              type: keyType,
-            },
-          },
-          create: {
-            actorId: actor.id,
-            type: keyType,
-            privateKey: JSON.stringify(await exportJwk(privateKey)),
-            publicKey: JSON.stringify(await exportJwk(publicKey)),
-          },
-          update: {},
-        });
-        pairs.push({
-          privateKey: await importJwk(JSON.parse(key.privateKey), "private"),
-          publicKey: await importJwk(JSON.parse(key.publicKey), "public"),
-        });
-      } else {
-        pairs.push({
-          privateKey: await importJwk(JSON.parse(keys[keyType].privateKey), "private"),
-          publicKey: await importJwk(JSON.parse(keys[keyType].publicKey), "public"),
-        });
-      }
-    }
-
-    return pairs;
+  const post = await prisma.posts.findFirst({
+    where: {
+      slug: values.slug,
+    },
+    include: {
+      user: true,
+      banner: true,
+      actor: true,
+    },
   });
+
+  if (!post) return null;
+
+  const content = `<a href="${post.uri}">${post.title}</a> (작성자: ${post.user.name} - 마지막 수정 ${format(post.updatedAt, "yyyy/MM/dd")})<br />${post.content}`;
+
+  return new Note({
+    id: ctx.getObjectUri(Note, values),
+    attribution: ctx.getActorUri(post.actor.username),
+    to: PUBLIC_COLLECTION,
+    cc: ctx.getFollowersUri(post.actor.username),
+    content,
+    mediaType: "text/html",
+    published: Temporal.Instant.from(
+      post.publishedAt ? post.publishedAt.toISOString() : post.createdAt.toISOString(),
+    ),
+    url: ctx.getObjectUri(Note, values),
+    attachments: post.banner
+      ? [
+          new Document({
+            url: new URL(post.banner.url),
+          }),
+        ]
+      : undefined,
+  });
+}
+
+federation
+  .setActorDispatcher("/users/{identifier}", dispatchActor)
+  .setKeyPairsDispatcher(dispatchKeyPairs);
 
 federation
   .setInboxListeners("/users/{identifier}/inbox", "/inbox")
