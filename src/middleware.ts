@@ -1,11 +1,12 @@
 import { fedifyWith } from "@fedify/next";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
+import { getXForwardedRequest } from "x-forwarded-fetch";
 
 import { federation } from "./federation";
 import { auth } from "./lib/auth";
 
-export default fedifyWith(federation)(async (req) => {
+const fedify = fedifyWith(federation)(async (req) => {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -20,6 +21,10 @@ export default fedifyWith(federation)(async (req) => {
     }
   }
 });
+
+export default async function middleware(req: Request) {
+  return await fedify(await getXForwardedRequest(req));
+}
 
 // This config must be defined on `middleware.ts`.
 export const config = {

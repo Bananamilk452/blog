@@ -158,6 +158,7 @@ federation
         },
       })
     )?.id;
+
     if (followingId == null) {
       log("Failed to find the actor to follow in the database:", object);
       return;
@@ -165,19 +166,45 @@ federation
 
     const followerId = (await upsertActor(follower)).id;
 
-    await prisma.follows.create({
-      data: {
-        followingId,
-        followerId,
-      },
-    });
+    try {
+      await prisma.follows.create({
+        data: {
+          followingId,
+          followerId,
+        },
+      });
+    } catch (error) {
+      log("Error creating follow relationship:", error);
+
+      const accept = new Accept({
+        actor: follow.objectId,
+        to: follow.actorId,
+        object: follow,
+      });
+      await ctx.sendActivity(
+        {
+          identifier: object.identifier,
+        },
+        follower,
+        accept,
+        { immediate: true },
+      );
+      return;
+    }
 
     const accept = new Accept({
       actor: follow.objectId,
       to: follow.actorId,
       object: follow,
     });
-    await ctx.sendActivity(object, follower, accept);
+    await ctx.sendActivity(
+      {
+        identifier: object.identifier,
+      },
+      follower,
+      accept,
+      { immediate: true },
+    );
   })
   .on(Undo, async (ctx, undo) => {
     log(`Received Undo activity: ${undo.id?.href}`);

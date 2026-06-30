@@ -8,54 +8,58 @@ import { downloadFile } from "./utils-server";
 const log = debug("blog:federation");
 
 export async function upsertActor(actor: Awaited<ReturnType<Activity["getActor"]>>) {
+  if (!actor || !actor.id || !actor.inboxId) {
+    log("Invalid actor data:", actor);
+    throw new Error("Invalid actor data");
+  }
+
+  const actorUri = actor.id.href;
+  const inboxUrl = actor.inboxId.href;
+
+  const a = await prisma.actor.findUnique({
+    where: { uri: actorUri },
+    include: { avatar: true },
+  });
+
+  const icon = await actor.getIcon();
+  const iconUrl = icon?.url?.toString();
+
+  let uploadedUrl: string | null = null;
+
+  // 아바타 업데이트가 필요하면 먼저 다운로드/업로드를 끝낸 뒤 DB 트랜잭션을 연다.
+  if (a?.avatar?.originalUrl !== iconUrl) {
+    if (icon && icon.url) {
+      const iconArrayBuffer = await downloadFile(icon.url.toString());
+      const iconFile = new File(
+        [iconArrayBuffer],
+        icon.url.toString().split("/").pop() || "avatar",
+        {
+          type: icon.mediaType?.toString() || "image/jpeg",
+        },
+      );
+      uploadedUrl = await uploadFile(iconFile, "remote-contents");
+    }
+  }
+
+  const handle = await getActorHandle(actor);
+  const username = actor.preferredUsername?.toString() || handle.split("@")[1] || "";
+
   return await prisma
     .$transaction(async (tx) => {
-      if (!actor || !actor.id || !actor.inboxId) {
-        log("Invalid actor data:", actor);
-        throw new Error("Invalid actor data");
-      }
-
-      const a = await tx.actor.findUnique({
-        where: { uri: actor.id.href },
-        include: { avatar: true },
-      });
-
-      const icon = await actor.getIcon();
-
-      let uploadedUrl: string | null = null;
-
-      // 아바타 업데이트가 필요하면
-      if (a?.avatar?.originalUrl !== icon?.url?.toString()) {
-        if (icon && icon.url) {
-          const iconArrayBuffer = await downloadFile(icon.url.toString());
-          const iconFile = new File(
-            [iconArrayBuffer],
-            icon.url.toString().split("/").pop() || "avatar",
-            {
-              type: icon.mediaType?.toString() || "image/jpeg",
-            },
-          );
-          uploadedUrl = await uploadFile(iconFile, "remote-contents");
-        }
-      }
-
-      const handle = await getActorHandle(actor);
-      const username = handle.split("@")[0].slice(1);
-
       return await tx.actor.upsert({
-        where: { uri: actor.id.href },
+        where: { uri: actorUri },
         create: {
-          uri: actor.id.href,
+          uri: actorUri,
           name: actor.name?.toString(),
           handle,
           username,
-          inboxUrl: actor.inboxId.href,
+          inboxUrl,
           sharedInboxUrl: actor.endpoints?.sharedInbox?.href,
           url: actor.url?.href?.toString(),
           avatar: {
             create: {
-              url: uploadedUrl || icon?.url?.toString() || "",
-              originalUrl: icon?.url?.toString() || "",
+              url: uploadedUrl || iconUrl || "",
+              originalUrl: iconUrl || "",
             },
           },
         },
@@ -63,18 +67,18 @@ export async function upsertActor(actor: Awaited<ReturnType<Activity["getActor"]
           name: actor.name?.toString(),
           handle,
           username,
-          inboxUrl: actor.inboxId.href,
+          inboxUrl,
           sharedInboxUrl: actor.endpoints?.sharedInbox?.href,
           url: actor.url?.href?.toString(),
           avatar: {
             upsert: {
               create: {
-                url: uploadedUrl || icon?.url?.toString() || "",
-                originalUrl: icon?.url?.toString() || "",
+                url: uploadedUrl || iconUrl || "",
+                originalUrl: iconUrl || "",
               },
               update: {
-                url: uploadedUrl || icon?.url?.toString() || "",
-                originalUrl: icon?.url?.toString() || "",
+                url: uploadedUrl || iconUrl || "",
+                originalUrl: iconUrl || "",
               },
             },
           },
