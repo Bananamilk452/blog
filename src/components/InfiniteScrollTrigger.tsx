@@ -12,17 +12,11 @@ export function InfiniteScrollTrigger({
   hasNextPage: boolean;
   isFetching: boolean;
 }) {
-  const scrollContainer = useRef<HTMLElement | null>(null);
   const lockRef = useRef(false);
-
-  useEffect(() => {
-    scrollContainer.current = document.getElementById("root");
-  }, []);
 
   const { isIntersecting, ref } = useIntersectionObserver({
     threshold: 0.5,
     rootMargin: "300px",
-    root: scrollContainer.current,
   });
 
   useEffect(() => {

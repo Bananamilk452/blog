@@ -43,9 +43,7 @@ export function PostComments({
   const topLevelComments = comments.filter((comment) => !comment.parentId);
 
   if (comments.length === 0) {
-    return (
-      <p className="py-8 text-center text-gray-500">아직 댓글이 없습니다.</p>
-    );
+    return <p className="muted py-8 text-center">아직 댓글이 없습니다.</p>;
   }
 
   return (
@@ -83,10 +81,10 @@ function CommentItem({
           <img
             src={comment.actor.avatar.url}
             alt={`${comment.actor.name} avatar`}
-            className="size-10 rounded-full bg-gray-300"
+            className="size-10 rounded-full border-2 border-[#fff7cc]/95 bg-[#e6d6bf] object-cover"
           />
         ) : (
-          <div className="size-10 rounded-full bg-gray-300" />
+          <div className="size-10 rounded-full border-2 border-[#fff7cc]/95 bg-[#e6d6bf]" />
         )}
       </div>
 
@@ -96,18 +94,18 @@ function CommentItem({
           <Link
             href={comment.actor.uri}
             target="_blank"
-            className="text-sm text-gray-500 hover:underline"
+            className="text-sm text-[#655648] hover:underline"
           >
             {comment.actor.handle}
           </Link>
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-[#655648]">
             {format(new Date(comment.createdAt), "yyyy년 MM월 dd일 HH:mm")}
           </span>
         </div>
 
         <div className="mt-2">
           <p
-            className="wrap-break-words dark:prose-invert text-base whitespace-pre-wrap [&_a]:text-blue-500 [&_a]:underline"
+            className="wrap-break-words text-base whitespace-pre-wrap [&_a]:text-[#815232] [&_a]:underline"
             dangerouslySetInnerHTML={{ __html: content }}
           />
         </div>
@@ -123,7 +121,7 @@ function CommentItem({
                     key={att.id}
                     src={att.url}
                     alt={att.name || "Comment Attachment"}
-                    className="mt-2 max-h-60 rounded-md"
+                    className="mt-2 max-h-60 rounded-2xl border-2 border-[#d8d0c5] shadow-[var(--shadow-soft)]"
                   />
                 );
               }
@@ -135,8 +133,8 @@ function CommentItem({
             comment={comment}
             onToggle={() => setShowReplyEditor(!showReplyEditor)}
           />
-          <RenoteButton comment={comment} />
-          <LikeButton comment={comment} />
+          <RenoteButton />
+          <LikeButton />
         </div>
 
         {showReplyEditor && (
@@ -155,7 +153,7 @@ function CommentItem({
         {"replies" in comment &&
           comment.replies &&
           comment.replies.length > 0 && (
-            <div className="mt-4 ml-8 flex flex-col gap-4 border-l-2 border-gray-200 pl-4">
+            <div className="mt-4 ml-8 flex flex-col gap-4 border-l-2 border-dashed border-[#d8d0c5] pl-4">
               {comment.replies.map((reply) => (
                 <CommentItem key={reply.id} comment={reply} slug={slug} />
               ))}
@@ -176,7 +174,7 @@ function ReplyButton({
   return (
     <button
       onClick={onToggle}
-      className="flex cursor-pointer items-center gap-1 text-gray-500 hover:text-gray-400"
+      className="flex cursor-pointer items-center gap-1 text-[#655648] hover:text-[#a46d43]"
     >
       <span className="text-sm">
         {"replies" in comment && comment.replies.length}
@@ -186,25 +184,17 @@ function ReplyButton({
   );
 }
 
-function RenoteButton({
-  comment,
-}: {
-  comment: CommentWithActor | CommentWithActor["replies"][number];
-}) {
+function RenoteButton() {
   return (
-    <button className="flex cursor-pointer items-center gap-1 text-gray-500 hover:text-gray-400">
+    <button className="flex cursor-pointer items-center gap-1 text-[#655648] hover:text-[#a46d43]">
       <Repeat2Icon className="size-4" />
     </button>
   );
 }
 
-function LikeButton({
-  comment,
-}: {
-  comment: CommentWithActor | CommentWithActor["replies"][number];
-}) {
+function LikeButton() {
   return (
-    <button className="flex cursor-pointer items-center gap-1 text-gray-500 hover:text-gray-400">
+    <button className="flex cursor-pointer items-center gap-1 text-[#655648] hover:text-[#a46d43]">
       <HeartIcon className="size-4" />
     </button>
   );
@@ -288,84 +278,86 @@ function ReplyEditor({
   });
 
   return (
-    <div className="rounded-lg border border-gray-900 bg-gray-800 p-4">
-      <Form {...form}>
-        <form onSubmit={handleSubmit}>
-          <FormField
-            control={form.control}
-            name="content"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <Textarea
-                    placeholder="답글을 입력하세요 (마크다운 지원)..."
-                    className="min-h-24 resize-none"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+    <div className="relative rounded-2xl border-2 border-[#d8d0c5] bg-[#fffdf5] p-4 shadow-[var(--shadow-soft)] before:pointer-events-none before:absolute before:inset-2 before:rounded-[inherit] before:border before:border-dashed before:border-[#a46d43]/20">
+      <div className="relative z-10">
+        <Form {...form}>
+          <form onSubmit={handleSubmit}>
+            <FormField
+              control={form.control}
+              name="content"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Textarea
+                      placeholder="답글을 입력하세요 (마크다운 지원)..."
+                      className="min-h-24 resize-none"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Image Previews */}
+            {imagePreviews.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {imagePreviews.map((preview, index) => (
+                  <div key={index} className="relative inline-block">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={preview}
+                      alt={`Preview ${index + 1}`}
+                      className="max-h-40 rounded-md"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(index)}
+                      className="absolute top-1 right-1 rounded-full bg-black/50 p-1 text-white hover:bg-black/70"
+                    >
+                      <XIcon className="size-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
             )}
-          />
 
-          {/* Image Previews */}
-          {imagePreviews.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-2">
-              {imagePreviews.map((preview, index) => (
-                <div key={index} className="relative inline-block">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={preview}
-                    alt={`Preview ${index + 1}`}
-                    className="max-h-40 rounded-md"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveImage(index)}
-                    className="absolute top-1 right-1 rounded-full bg-black/50 p-1 text-white hover:bg-black/70"
-                  >
-                    <XIcon className="size-4" />
-                  </button>
-                </div>
-              ))}
+            {/* File Input */}
+            <div className="mt-2 flex items-center gap-2">
+              <label className="cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageChange}
+                  className="hidden"
+                  disabled={imageFiles.length >= 4}
+                />
+                <Button disabled={imageFiles.length >= 4} type="button">
+                  <ImageIcon className="size-4" />
+                  <span>이미지 추가 ({imageFiles.length}/4)</span>
+                </Button>
+              </label>
             </div>
-          )}
 
-          {/* File Input */}
-          <div className="mt-2 flex items-center gap-2">
-            <label className="cursor-pointer">
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleImageChange}
-                className="hidden"
-                disabled={imageFiles.length >= 4}
-              />
-              <Button disabled={imageFiles.length >= 4} type="button">
-                <ImageIcon className="size-4" />
-                <span>이미지 추가 ({imageFiles.length}/4)</span>
+            {/* Action Buttons */}
+            <div className="mt-3 flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onCancel}
+                disabled={status === "pending"}
+              >
+                취소
               </Button>
-            </label>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="mt-3 flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onCancel}
-              disabled={status === "pending"}
-            >
-              취소
-            </Button>
-            <Button type="submit" size="sm" disabled={status === "pending"}>
-              {status === "pending" ? "작성 중..." : "답글 작성"}
-            </Button>
-          </div>
-        </form>
-      </Form>
+              <Button type="submit" size="sm" disabled={status === "pending"}>
+                {status === "pending" ? "작성 중..." : "답글 작성"}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </div>
     </div>
   );
 }

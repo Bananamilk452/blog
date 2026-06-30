@@ -2,6 +2,7 @@
 
 import "@blocknote/core/fonts/inter.css";
 import "@blocknote/shadcn/style.css";
+import "./editor.css";
 
 import { BlockNoteView } from "@blocknote/shadcn";
 import { useEffect } from "react";
@@ -34,7 +35,7 @@ export default function Editor() {
         />
       </div>
 
-      <hr className="m-4 border-gray-600" />
+      <hr className="m-4 border-[#d8d0c5]" />
 
       <BlockNoteView
         className="*:bg-secondary! min-h-0 grow overflow-auto"

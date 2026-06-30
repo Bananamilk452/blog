@@ -29,6 +29,9 @@ importers:
       '@fedify/redis':
         specifier: ^1.8.14
         version: 1.8.14(@fedify/fedify@1.9.0(web-streams-polyfill@3.3.3))(ioredis@5.8.1)
+      '@fontsource/neucha':
+        specifier: ^5.2.8
+        version: 5.2.8
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.65.0(react@19.1.0))
@@ -38,6 +41,9 @@ importers:
       '@logtape/logtape':
         specifier: ^2.0.0
         version: 2.0.0
+      '@noonnu/gyeonggi-batang':
+        specifier: ^0.1.0
+        version: 0.1.0
       '@prisma/client':
         specifier: 6.17.1
         version: 6.17.1(prisma@6.17.1(typescript@5.9.3))(typescript@5.9.3)
@@ -649,6 +655,9 @@ packages:
   '@floating-ui/utils@0.2.10':
     resolution: {integrity: sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ==}
 
+  '@fontsource/neucha@5.2.8':
+    resolution: {integrity: sha512-sbDomxCf2xBcOuuZAK5tt/j5AFLjgWTA5+Q1UIbi8PDBbKdfsiRgBxbqcRUyEZIB95kdwgabX1tfK7o2bYuWfg==}
+
   '@hexagon/base64@1.1.28':
     resolution: {integrity: sha512-lhqDEAvWixy3bZ+UOYbPwUbBkwBq5C1LAJ/xPC8Oi+lL54oyakv/npbA0aU2hgCsx/1NUd4IBvV03+aUBWxerw==}
 
@@ -941,6 +950,9 @@ packages:
   '@nolyfill/is-core-module@1.0.39':
     resolution: {integrity: sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==}
     engines: {node: '>=12.4.0'}
+
+  '@noonnu/gyeonggi-batang@0.1.0':
+    resolution: {integrity: sha512-3u27tNz6jNcP+KPv/CwQ7vtyVjHkkPf8EcTeQDGshwICmeqbVv4t3bphbtHzP5RpgaKw2hz5N2v2/us8mY+rkA==}
 
   '@opentelemetry/api@1.9.0':
     resolution: {integrity: sha512-3giAOQvZiH5F9bMlMiv8+GSPMeqg0dbaeo58/0SlA9sxSqZhnUtxzX9/2FzyhS9sWQf5S0GJE0AKBrFqjpeYcg==}
@@ -3741,6 +3753,7 @@ packages:
   prebuild-install@7.1.3:
     resolution: {integrity: sha512-8Mf2cbV7x1cXPUILADGI3wuhfqWvtiLA1iclTDbFRZkgRQS0NqsPZphna9V+HyTEadheuPmjaJMsbzKQFOzLug==}
     engines: {node: '>=10'}
+    deprecated: No longer maintained. Please contact the author of the relevant native addon; alternatives are available.
     hasBin: true
 
   prelude-ls@1.2.1:
@@ -5532,6 +5545,8 @@ snapshots:
 
   '@floating-ui/utils@0.2.10': {}
 
+  '@fontsource/neucha@5.2.8': {}
+
   '@hexagon/base64@1.1.28': {}
 
   '@hookform/resolvers@3.10.0(react-hook-form@7.65.0(react@19.1.0))':
@@ -5743,6 +5758,8 @@ snapshots:
       fastq: 1.19.1
 
   '@nolyfill/is-core-module@1.0.39': {}
+
+  '@noonnu/gyeonggi-batang@0.1.0': {}
 
   '@opentelemetry/api@1.9.0': {}
 

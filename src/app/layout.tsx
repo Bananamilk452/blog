@@ -11,18 +11,25 @@ import { Toaster } from "~/components/ui/sonner";
 
 import Providers from "./providers";
 
-const pretendard = localFont({
-  src: "./PretendardVariable.woff2",
-  display: "swap",
-  weight: "45 920",
-  variable: "--font-pretendard",
-});
-
 const jetbrainsMono = localFont({
   src: "./JetBrainsMonoVariable.ttf",
   display: "swap",
   weight: "100 900",
   variable: "--font-jetbrains-mono",
+});
+
+const gyeonggiBatang = localFont({
+  src: "../../node_modules/@noonnu/gyeonggi-batang/fonts/gyeonggibatang-normal.woff",
+  display: "swap",
+  weight: "400",
+  variable: "--font-gyeonggi-batang",
+});
+
+const neucha = localFont({
+  src: "../../node_modules/@fontsource/neucha/files/neucha-latin-400-normal.woff2",
+  display: "swap",
+  weight: "400",
+  variable: "--font-neucha",
 });
 
 export const metadata: Metadata = {
@@ -36,13 +43,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" suppressHydrationWarning>
-      <body
-        className={`${pretendard.className} ${jetbrainsMono.variable} bg-secondary antialiased`}
-      >
+    <html
+      lang="ko"
+      suppressHydrationWarning
+      className={`${gyeonggiBatang.variable} ${neucha.variable} ${jetbrainsMono.variable} min-h-screen min-w-screen`}
+    >
+      <body className="antialiased">
         <ThemeProvider
           attribute="class"
-          defaultTheme="dark"
+          defaultTheme="light"
           disableTransitionOnChange
         >
           <Providers>
