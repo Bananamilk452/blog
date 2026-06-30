@@ -1,15 +1,12 @@
 import localFont from "next/font/local";
 
 import "~/lib/zod";
-
-import type { Metadata } from "next";
-
+import Providers from "./providers";
 import "./globals.css";
-
 import { ThemeProvider } from "~/components/providers/ThemeProvider";
 import { Toaster } from "~/components/ui/sonner";
 
-import Providers from "./providers";
+import type { Metadata } from "next";
 
 const jetbrainsMono = localFont({
   src: "./JetBrainsMonoVariable.ttf",
@@ -49,11 +46,7 @@ export default function RootLayout({
       className={`${gyeonggiBatang.variable} ${neucha.variable} ${jetbrainsMono.variable} min-h-screen min-w-screen`}
     >
       <body className="antialiased">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          disableTransitionOnChange
-        >
+        <ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange>
           <Providers>
             {children}
             <Toaster />

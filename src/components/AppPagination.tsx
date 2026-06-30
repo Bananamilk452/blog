@@ -49,9 +49,7 @@ export function AppPagination(props: AppPaginationProps) {
             {props.render ? (
               props.render(number)
             ) : (
-              <PaginationLink isActive={number === props.page}>
-                {number}
-              </PaginationLink>
+              <PaginationLink isActive={number === props.page}>{number}</PaginationLink>
             )}
           </PaginationItem>
         ))}

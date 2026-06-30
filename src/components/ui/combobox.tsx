@@ -12,11 +12,7 @@ import {
   CommandItem,
   CommandList,
 } from "~/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "~/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { cn } from "~/lib/utils";
 
 export interface ComboboxOption {
@@ -57,9 +53,7 @@ export function CreatableCombobox({
   const selectedOption = options.find((option) => option.value === value);
 
   const handleSelect = (currentValue: string) => {
-    const option = options.find(
-      (o) => o.label.toLowerCase() === currentValue.toLowerCase(),
-    );
+    const option = options.find((o) => o.label.toLowerCase() === currentValue.toLowerCase());
     const newValue = option ? option.value : currentValue;
     onChange(newValue);
     setQuery("");
@@ -68,9 +62,7 @@ export function CreatableCombobox({
 
   const showCreateOption =
     query.length > 0 &&
-    !options.some(
-      (option) => option.label.toLowerCase() === query.toLowerCase(),
-    );
+    !options.some((option) => option.label.toLowerCase() === query.toLowerCase());
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -78,6 +70,7 @@ export function CreatableCombobox({
         <Button
           variant="outline"
           role="combobox"
+          aria-controls="combobox"
           aria-expanded={open}
           className="w-full justify-between font-normal"
         >
@@ -85,25 +78,14 @@ export function CreatableCombobox({
           <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent
-        className="w-[--radix-popover-trigger-width] p-0"
-        align="start"
-      >
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
         <Command shouldFilter={false}>
-          <CommandInput
-            placeholder={searchPlaceholder}
-            value={query}
-            onValueChange={setQuery}
-          />
+          <CommandInput placeholder={searchPlaceholder} value={query} onValueChange={setQuery} />
           <CommandList>
             <CommandEmpty>{emptyPlaceholder}</CommandEmpty>
             <CommandGroup>
               {filteredOptions.map((option) => (
-                <CommandItem
-                  key={option.value}
-                  value={option.label}
-                  onSelect={handleSelect}
-                >
+                <CommandItem key={option.value} value={option.label} onSelect={handleSelect}>
                   <CheckIcon
                     className={cn(
                       "mr-2 h-4 w-4",

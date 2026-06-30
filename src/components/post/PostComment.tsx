@@ -3,43 +3,22 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import DOMPurify from "isomorphic-dompurify";
-import {
-  HeartIcon,
-  ImageIcon,
-  Repeat2Icon,
-  ReplyIcon,
-  XIcon,
-} from "lucide-react";
+import { HeartIcon, ImageIcon, Repeat2Icon, ReplyIcon, XIcon } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { Button } from "~/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormMessage,
-} from "~/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "~/components/ui/form";
 import { Textarea } from "~/components/ui/textarea";
 import { useCreateComment } from "~/hooks/useCreateComment";
 import { getCommentsBySlug } from "~/lib/actions/post";
-import {
-  CreateCommentForm,
-  CreateCommentFormSchema,
-} from "~/types/zod/CreateCommentFormSchema";
+import { CreateCommentForm, CreateCommentFormSchema } from "~/types/zod/CreateCommentFormSchema";
 
 type CommentWithActor = Awaited<ReturnType<typeof getCommentsBySlug>>[number];
 
-export function PostComments({
-  comments,
-  slug,
-}: {
-  comments: CommentWithActor[];
-  slug: string;
-}) {
+export function PostComments({ comments, slug }: { comments: CommentWithActor[]; slug: string }) {
   const topLevelComments = comments.filter((comment) => !comment.parentId);
 
   if (comments.length === 0) {
@@ -68,9 +47,7 @@ function CommentItem({
   const initialContent =
     [
       comment.actor.handle,
-      ...(comment.mentions as { href: string; name: string }[]).map(
-        (m) => m.name,
-      ),
+      ...(comment.mentions as { href: string; name: string }[]).map((m) => m.name),
     ].join(" ") + " ";
 
   return (
@@ -129,10 +106,7 @@ function CommentItem({
         </div>
 
         <div className="mt-2 flex items-center gap-4">
-          <ReplyButton
-            comment={comment}
-            onToggle={() => setShowReplyEditor(!showReplyEditor)}
-          />
+          <ReplyButton comment={comment} onToggle={() => setShowReplyEditor(!showReplyEditor)} />
           <RenoteButton />
           <LikeButton />
         </div>
@@ -150,15 +124,13 @@ function CommentItem({
           </div>
         )}
 
-        {"replies" in comment &&
-          comment.replies &&
-          comment.replies.length > 0 && (
-            <div className="mt-4 ml-8 flex flex-col gap-4 border-l-2 border-dashed border-[#d8d0c5] pl-4">
-              {comment.replies.map((reply) => (
-                <CommentItem key={reply.id} comment={reply} slug={slug} />
-              ))}
-            </div>
-          )}
+        {"replies" in comment && comment.replies && comment.replies.length > 0 && (
+          <div className="mt-4 ml-8 flex flex-col gap-4 border-l-2 border-dashed border-[#d8d0c5] pl-4">
+            {comment.replies.map((reply) => (
+              <CommentItem key={reply.id} comment={reply} slug={slug} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -176,9 +148,7 @@ function ReplyButton({
       onClick={onToggle}
       className="flex cursor-pointer items-center gap-1 text-[#655648] hover:text-[#a46d43]"
     >
-      <span className="text-sm">
-        {"replies" in comment && comment.replies.length}
-      </span>
+      <span className="text-sm">{"replies" in comment && comment.replies.length}</span>
       <ReplyIcon className="size-4" />
     </button>
   );

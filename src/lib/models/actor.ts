@@ -1,10 +1,9 @@
 import { Update } from "@fedify/fedify";
 
-import { federation } from "~/federation";
-import { Image } from "~/generated/prisma";
-
 import { prisma } from "../prisma";
 import { uploadFile } from "./s3";
+import { federation } from "~/federation";
+import { Image } from "~/generated/prisma";
 
 export async function getMainActor() {
   const mainActor = await prisma.mainActor.findFirst({
@@ -72,10 +71,7 @@ export async function updateMainActor({
       },
     });
 
-    const context = federation.createContext(
-      new Request(process.env.PUBLIC_URL!),
-      undefined,
-    );
+    const context = federation.createContext(new Request(process.env.PUBLIC_URL!), undefined);
     const actor = await context.getActor(a.handle);
 
     if (actor) {

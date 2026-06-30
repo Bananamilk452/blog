@@ -91,18 +91,17 @@ federation
       return [];
     }
 
-    const keys = Object.fromEntries(
-      actor?.keys.map((k) => [k.type, k]),
-    ) as Record<Key["type"], Key>;
+    const keys = Object.fromEntries(actor?.keys.map((k) => [k.type, k])) as Record<
+      Key["type"],
+      Key
+    >;
     const pairs: CryptoKeyPair[] = [];
 
     // 사용자가 지원하는 두 키 형식 (RSASSA-PKCS1-v1_5 및 Ed25519) 각각에 대해
     // 키 쌍을 보유하고 있는지 확인하고, 없으면 생성 후 데이터베이스에 저장:
     for (const keyType of ["RSASSA-PKCS1-v1_5", "Ed25519"] as const) {
       if (keys[keyType] == null) {
-        log(
-          `The user ${identifier} does not have an ${keyType} key; creating one...`,
-        );
+        log(`The user ${identifier} does not have an ${keyType} key; creating one...`);
         const { privateKey, publicKey } = await generateCryptoKeyPair(keyType);
         await prisma.keys.create({
           data: {
@@ -115,14 +114,8 @@ federation
         pairs.push({ privateKey, publicKey });
       } else {
         pairs.push({
-          privateKey: await importJwk(
-            JSON.parse(keys[keyType].privateKey),
-            "private",
-          ),
-          publicKey: await importJwk(
-            JSON.parse(keys[keyType].publicKey),
-            "public",
-          ),
+          privateKey: await importJwk(JSON.parse(keys[keyType].privateKey), "private"),
+          publicKey: await importJwk(JSON.parse(keys[keyType].publicKey), "public"),
         });
       }
     }
@@ -214,9 +207,7 @@ federation
       return;
     }
 
-    log(
-      `Processing unfollow from ${followerActor?.handle} to @${followingActor?.handle}`,
-    );
+    log(`Processing unfollow from ${followerActor?.handle} to @${followingActor?.handle}`);
 
     await prisma.follows.delete({
       where: {
@@ -285,12 +276,6 @@ federation
           });
         }
       }
-
-      const tags = (await object.toJsonLd()) as
-        | {
-            tag?: { type: string; href: string; name: string }[];
-          }
-        | { type: string; href: string; name: string };
 
       const mentions = getTagFromNote(object);
 
@@ -389,9 +374,7 @@ federation
 
     if (isActor(object)) {
       if (update.actorId?.href !== object.id?.href) {
-        log(
-          "Unauthorized actor update attempt: Actor can only update themselves",
-        );
+        log("Unauthorized actor update attempt: Actor can only update themselves");
         return;
       }
 
@@ -402,37 +385,34 @@ federation
   });
 
 federation
-  .setFollowersDispatcher(
-    "/users/{identifier}/followers",
-    async (ctx, identifier) => {
-      log(`Dispatching followers for identifier: ${identifier}`);
+  .setFollowersDispatcher("/users/{identifier}/followers", async (ctx, identifier) => {
+    log(`Dispatching followers for identifier: ${identifier}`);
 
-      const followers = await prisma.follows.findMany({
-        where: {
-          following: {
-            user: {
-              username: identifier,
-            },
+    const followers = await prisma.follows.findMany({
+      where: {
+        following: {
+          user: {
+            username: identifier,
           },
         },
-        include: {
-          follower: true,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
-      const items: Recipient[] = followers.map((f) => ({
-        id: new URL(f.follower.uri),
-        inboxId: new URL(f.follower.inboxUrl),
-        endpoints:
-          f.follower.sharedInboxUrl == null
-            ? null
-            : { sharedInbox: new URL(f.follower.sharedInboxUrl) },
-      }));
-      return { items };
-    },
-  )
+      },
+      include: {
+        follower: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+    const items: Recipient[] = followers.map((f) => ({
+      id: new URL(f.follower.uri),
+      inboxId: new URL(f.follower.inboxUrl),
+      endpoints:
+        f.follower.sharedInboxUrl == null
+          ? null
+          : { sharedInbox: new URL(f.follower.sharedInboxUrl) },
+    }));
+    return { items };
+  })
   .setCounter(async (ctx, identifier) => {
     log(`Counting followers for identifier: ${identifier}`);
 
@@ -454,8 +434,7 @@ federation.setObjectDispatcher(Note, "/post/{slug}", async (ctx, values) => {
   // Check if slug contains UUID pattern (comment vs post)
   // Comment slug format: postSlug-uuid
   // UUID pattern: 8-4-4-4-12 hex digits
-  const uuidPattern =
-    /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const uuidPattern = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const isComment = uuidPattern.test(values.slug);
   if (isComment) {
     // Handle comment
@@ -498,9 +477,7 @@ federation.setObjectDispatcher(Note, "/post/{slug}", async (ctx, values) => {
       ),
       content: comment.content,
       mediaType: "text/html",
-      replyTarget: comment.parent
-        ? new URL(comment.parent.uri)
-        : new URL(comment.post.uri),
+      replyTarget: comment.parent ? new URL(comment.parent.uri) : new URL(comment.post.uri),
       attachments: comment.attachment.map(
         (att) =>
           new Document({
@@ -536,9 +513,7 @@ federation.setObjectDispatcher(Note, "/post/{slug}", async (ctx, values) => {
       content,
       mediaType: "text/html",
       published: Temporal.Instant.from(
-        post.publishedAt
-          ? post.publishedAt.toISOString()
-          : post.createdAt.toISOString(),
+        post.publishedAt ? post.publishedAt.toISOString() : post.createdAt.toISOString(),
       ),
       url: ctx.getObjectUri(Note, values),
       attachments: post.banner

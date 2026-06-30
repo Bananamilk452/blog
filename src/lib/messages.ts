@@ -1,9 +1,6 @@
 import { authClient } from "~/lib/auth-client";
 
-type AuthMessages = Record<
-  keyof typeof authClient.$ERROR_CODES | string,
-  string
->;
+type AuthMessages = Record<keyof typeof authClient.$ERROR_CODES | string, string>;
 
 export const AUTH_MESSAGES = {
   // BETTER-AUTH MESSAGES
@@ -33,10 +30,8 @@ export const AUTH_MESSAGES = {
   USER_NOT_FOUND: "사용자를 찾을 수 없습니다",
 
   // CUSTOM MESSAGES
-  SIGN_UP_SUCCESS:
-    "회원가입이 완료되었습니다. 발송된 인증 이메일을 확인해주세요",
-  FORGOT_PASSWORD_SUCCESS:
-    "비밀번호 재설정 이메일이 발송되었습니다. 이메일을 확인해주세요",
+  SIGN_UP_SUCCESS: "회원가입이 완료되었습니다. 발송된 인증 이메일을 확인해주세요",
+  FORGOT_PASSWORD_SUCCESS: "비밀번호 재설정 이메일이 발송되었습니다. 이메일을 확인해주세요",
   RESET_PASSWORD_SUCCESS: "비밀번호가 재설정되었습니다",
 } satisfies AuthMessages;
 

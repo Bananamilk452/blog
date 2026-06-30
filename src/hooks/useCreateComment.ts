@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { createComment } from "~/lib/actions/post";
 import { CreateCommentForm } from "~/types/zod/CreateCommentFormSchema";
 
-export function useCreateComment(slug: string) {
+export function useCreateComment() {
   const router = useRouter();
 
   return useMutation({

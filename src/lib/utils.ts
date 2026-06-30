@@ -4,8 +4,7 @@ import { twMerge } from "tailwind-merge";
 import type { ClassValue } from "clsx";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type ComponentVariant<T extends (...args: any) => any> =
-  Parameters<T>[0]["variant"];
+export type ComponentVariant<T extends (...args: any) => any> = Parameters<T>[0]["variant"];
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

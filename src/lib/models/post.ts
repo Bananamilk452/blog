@@ -7,19 +7,17 @@ import {
   Mention,
   Note,
   PUBLIC_COLLECTION,
-  Recipient,
   Update,
 } from "@fedify/fedify";
 import { Temporal } from "@js-temporal/polyfill";
 import DOMPurify from "isomorphic-dompurify";
 import { marked } from "marked";
 
+import { isFollowersOnly, isNonList, isPublic } from "../utils-federation";
+import { uploadFile } from "./s3";
 import { federation } from "~/federation";
 import { Category, Image } from "~/generated/prisma";
 import { prisma } from "~/lib/prisma";
-
-import { isFollowersOnly, isNonList, isPublic } from "../utils-federation";
-import { uploadFile } from "./s3";
 
 export async function createPost(
   userId: string,
@@ -42,10 +40,7 @@ export async function createPost(
 
   const username = mainActor.actor.username;
 
-  const ctx = federation.createContext(
-    new Request(process.env.PUBLIC_URL!),
-    undefined,
-  );
+  const ctx = federation.createContext(new Request(process.env.PUBLIC_URL!), undefined);
 
   const post = await prisma.$transaction(async (tx) => {
     let category: Category | null = null;
@@ -137,10 +132,7 @@ export async function updatePost(
 
   const username = mainActor.actor.username;
 
-  const ctx = federation.createContext(
-    new Request(process.env.PUBLIC_URL!),
-    undefined,
-  );
+  const ctx = federation.createContext(new Request(process.env.PUBLIC_URL!), undefined);
 
   const existingPost = await prisma.posts.findFirst({
     where: { id: postId },
@@ -208,10 +200,7 @@ export async function updatePost(
 }
 
 export async function deletePost(postId: string) {
-  const ctx = federation.createContext(
-    new Request(process.env.PUBLIC_URL!),
-    undefined,
-  );
+  const ctx = federation.createContext(new Request(process.env.PUBLIC_URL!), undefined);
   const mainActor = await prisma.mainActor.findFirst({
     include: { actor: true },
   });
@@ -410,14 +399,9 @@ export async function createComment(
   const username = mainActor.actor.username;
 
   // Create federation context
-  const ctx = federation.createContext(
-    new Request(process.env.PUBLIC_URL!),
-    undefined,
-  );
+  const ctx = federation.createContext(new Request(process.env.PUBLIC_URL!), undefined);
 
-  const mentions = data.content
-    .split(/\s+/)
-    .filter((word) => word.startsWith("@"));
+  const mentions = data.content.split(/\s+/).filter((word) => word.startsWith("@"));
 
   const mentionActors: Actor[] = [];
 

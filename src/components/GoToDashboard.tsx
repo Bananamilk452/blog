@@ -1,6 +1,7 @@
-'use client'
+"use client";
 
 import Link from "next/link";
+
 import { useSession } from "~/hooks/useSession";
 
 export function GoToDashboard() {
@@ -10,9 +11,5 @@ export function GoToDashboard() {
     return null;
   }
 
-  return (
-    <Link href="/dashboard">
-      대시보드
-    </Link>
-  )
+  return <Link href="/dashboard">대시보드</Link>;
 }

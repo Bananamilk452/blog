@@ -6,10 +6,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { PAGE_SIZE, PAGINATION_SIZE } from "~/constants";
-import { Category, Posts, User } from "~/generated/prisma";
-import { getPosts } from "~/lib/actions/post";
-
 import { AppPagination } from "../../AppPagination";
 import { Badge } from "../../ui/badge";
 import { Button } from "../../ui/button";
@@ -22,6 +18,9 @@ import {
 } from "../../ui/dropdown-menu";
 import { Skeleton } from "../../ui/skeleton";
 import { DeletePostModal } from "./DeletePostModal";
+import { PAGE_SIZE, PAGINATION_SIZE } from "~/constants";
+import { Category, Posts, User } from "~/generated/prisma";
+import { getPosts } from "~/lib/actions/post";
 
 interface PostPaginationListProps {
   includeDraft?: boolean;
@@ -32,8 +31,7 @@ export function PostPaginationList({ includeDraft }: PostPaginationListProps) {
 
   const { data, status } = useQuery({
     queryKey: ["posts", { page, limit: PAGE_SIZE, includeDraft }],
-    queryFn: () =>
-      getPosts({ page, limit: PAGE_SIZE, include: { draft: includeDraft } }),
+    queryFn: () => getPosts({ page, limit: PAGE_SIZE, include: { draft: includeDraft } }),
   });
 
   return (
@@ -116,9 +114,7 @@ export function PostDropdownMenu({ post }: { post: Post }) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuGroup>
-          <DropdownMenuItem
-            onClick={() => router.push(`/dashboard/edit?id=${post.id}`)}
-          >
+          <DropdownMenuItem onClick={() => router.push(`/dashboard/edit?id=${post.id}`)}>
             <SquarePenIcon />
             수정
           </DropdownMenuItem>
@@ -147,9 +143,7 @@ function PostTable({ posts }: { posts: Post[] }) {
             <div className="flex gap-2">
               {post.slug ? (
                 <Link href={`/post/${post.slug}`}>
-                  <span className="font-medium hover:underline">
-                    {post.title}
-                  </span>
+                  <span className="font-medium hover:underline">{post.title}</span>
                 </Link>
               ) : (
                 <span className="font-medium">{post.title}</span>

@@ -1,15 +1,10 @@
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 
+import { PostPage } from "./PostPage";
 import { getCommentsBySlug, getPostBySlug } from "~/lib/actions/post";
 import { getQueryClient } from "~/lib/getQueryClient";
 
-import { PostPage } from "./PostPage";
-
-export default async function PostIdPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default async function PostIdPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const queryClient = getQueryClient();
 

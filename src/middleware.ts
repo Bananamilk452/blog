@@ -14,14 +14,9 @@ export default fedifyWith(federation)(async (req) => {
   // /dashboard로 시작하는 URL은 인증이 필요
   if (url.pathname.startsWith("/dashboard")) {
     if (!session) {
-      return NextResponse.redirect(
-        new URL(`/sign-in?redirectTo=${url.pathname}`, req.url),
-      );
+      return NextResponse.redirect(new URL(`/sign-in?redirectTo=${url.pathname}`, req.url));
     } else if (session.user.role !== "admin") {
-      return Response.json(
-        { message: "관리자 권한이 필요합니다." },
-        { status: 403 },
-      );
+      return Response.json({ message: "관리자 권한이 필요합니다." }, { status: 403 });
     }
   }
 });

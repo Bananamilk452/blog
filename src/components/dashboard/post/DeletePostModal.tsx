@@ -49,8 +49,7 @@ export function DeletePostModal({ post, open, setOpen }: DeletePostModalProps) {
           </DialogHeader>
           <div className="mt-2 grid gap-4 py-4">
             <span className="text-sm">
-              <b className="font-bold">{post.title}</b> 포스트를 정말로
-              삭제하시겠습니까?
+              <b className="font-bold">{post.title}</b> 포스트를 정말로 삭제하시겠습니까?
             </span>
           </div>
           <DialogFooter>

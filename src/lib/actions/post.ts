@@ -4,9 +4,7 @@ import { PostService } from "../services/post";
 import { getOptionalSession, getValidAdminSession } from "../utils-server";
 import { uploadFile } from "./s3";
 
-export async function createPost(
-  data: Parameters<typeof PostService.prototype.createPost>[0],
-) {
+export async function createPost(data: Parameters<typeof PostService.prototype.createPost>[0]) {
   const session = await getValidAdminSession();
 
   const postService = new PostService(session.user.id);
@@ -49,9 +47,7 @@ export async function getPostBySlug(slug: string) {
   return await postService.getPostBySlug(slug);
 }
 
-export async function getPosts(
-  options: Parameters<typeof PostService.prototype.getPosts>[0],
-) {
+export async function getPosts(options: Parameters<typeof PostService.prototype.getPosts>[0]) {
   const session = await getOptionalSession();
 
   if (session?.user.role !== "admin" && options?.include?.draft) {

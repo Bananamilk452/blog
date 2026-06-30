@@ -11,8 +11,7 @@
   --font-serif: var(--font-gyeonggi-batang), var(--font-neucha), serif;
   --font-hand: var(--font-neucha), var(--font-gyeonggi-batang), serif;
   --font-mono:
-    var(--font-jetbrains-mono), "SFMono-Regular", Consolas, "Liberation Mono",
-    Menlo, monospace;
+    var(--font-jetbrains-mono), "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   --font-mono--font-feature-settings: "liga" off, "calt" off;
 }
 
@@ -129,11 +128,7 @@
     word-break: keep-all;
     background-color: #f6efdf;
     background-image:
-      linear-gradient(
-        to bottom,
-        rgba(116, 168, 214, 0.14) 1px,
-        transparent 1px
-      ),
+      linear-gradient(to bottom, rgba(116, 168, 214, 0.14) 1px, transparent 1px),
       linear-gradient(to right, rgba(210, 122, 122, 0.2) 1px, transparent 1px),
       linear-gradient(180deg, #fbf7ec 0%, #f6efdf 100%);
     background-size:
@@ -227,8 +222,7 @@
   code,
   pre {
     font-family:
-      var(--font-jetbrains-mono), "SFMono-Regular", Consolas, "Liberation Mono",
-      Menlo, monospace;
+      var(--font-jetbrains-mono), "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   }
 
   code {

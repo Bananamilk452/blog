@@ -2,11 +2,7 @@ import Image from "next/image";
 
 import { getMainActor } from "~/lib/actions/actor";
 
-export function ActorCard({
-  actor,
-}: {
-  actor: Awaited<ReturnType<typeof getMainActor>>["actor"];
-}) {
+export function ActorCard({ actor }: { actor: Awaited<ReturnType<typeof getMainActor>>["actor"] }) {
   return (
     <div className="mx-auto flex max-w-lg flex-col overflow-hidden rounded-3xl border-2 border-[#d8d0c5] bg-[#fffdf5] shadow-[var(--shadow)]">
       <div className="h-36">

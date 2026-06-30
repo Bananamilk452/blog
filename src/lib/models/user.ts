@@ -1,7 +1,6 @@
-import { Image } from "~/generated/prisma";
-
 import { prisma } from "../prisma";
 import { uploadFile } from "./s3";
+import { Image } from "~/generated/prisma";
 
 export function getUser(userId: string) {
   return prisma.user.findUnique({
@@ -12,10 +11,7 @@ export function getUser(userId: string) {
   });
 }
 
-export function updateUser(
-  userId: string,
-  data: { name: string; avatar: File | undefined },
-) {
+export function updateUser(userId: string, data: { name: string; avatar: File | undefined }) {
   return prisma.$transaction(async (tx) => {
     let avatarObject: Image | null = null;
 

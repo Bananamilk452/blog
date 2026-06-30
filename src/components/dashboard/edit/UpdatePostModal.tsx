@@ -27,15 +27,9 @@ import {
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
 import { Category, Posts, User } from "~/generated/prisma";
-import {
-  getCategories,
-  updatePost as updatePostAction,
-} from "~/lib/actions/post";
+import { getCategories, updatePost as updatePostAction } from "~/lib/actions/post";
 import { getQueryClient } from "~/lib/getQueryClient";
-import {
-  CreatePostForm,
-  CreatePostFormSchema,
-} from "~/types/zod/CreatePostFormSchema";
+import { CreatePostForm, CreatePostFormSchema } from "~/types/zod/CreatePostFormSchema";
 
 interface UpdatePostModalProps {
   post: Posts & { category: Category | null } & { user: User | null };
@@ -73,9 +67,7 @@ export function UpdatePostModal({ post, open, setOpen }: UpdatePostModalProps) {
   });
 
   const categoryOptions = useMemo(() => {
-    return categories
-      ? categories.map((c) => ({ label: c.name, value: c.name }))
-      : [];
+    return categories ? categories.map((c) => ({ label: c.name, value: c.name })) : [];
   }, [categories]);
 
   const { mutate: updatePost, status: updatePostStatus } = useMutation({

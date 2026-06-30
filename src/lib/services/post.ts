@@ -37,9 +37,7 @@ export class PostService {
 
     const existingPost = await getPost(id, this.userId);
     if (!existingPost || existingPost.userId !== this.userId) {
-      throw new Error(
-        "Post not found or you do not have permission to edit it",
-      );
+      throw new Error("Post not found or you do not have permission to edit it");
     }
 
     const post = await updatePost(id, data);
@@ -50,9 +48,7 @@ export class PostService {
   async deletePost(id: string) {
     const existingPost = await getPost(id, this.userId);
     if (!existingPost || existingPost.userId !== this.userId) {
-      throw new Error(
-        "Post not found or you do not have permission to delete it",
-      );
+      throw new Error("Post not found or you do not have permission to delete it");
     }
 
     const deletedPost = await deletePost(id);
@@ -68,11 +64,7 @@ export class PostService {
     return await getPostBySlug(slug, this.userId);
   }
 
-  async getPosts(options?: {
-    page?: number;
-    limit?: number;
-    include?: { draft?: boolean };
-  }) {
+  async getPosts(options?: { page?: number; limit?: number; include?: { draft?: boolean } }) {
     const take = options?.limit ?? 10;
     const skip = options?.page ? (options.page - 1) * take : 0;
 

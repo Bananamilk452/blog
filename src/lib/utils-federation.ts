@@ -1,9 +1,4 @@
-import {
-  Activity,
-  getActorHandle,
-  Note,
-  PUBLIC_COLLECTION,
-} from "@fedify/fedify";
+import { Activity, getActorHandle, Note, PUBLIC_COLLECTION } from "@fedify/fedify";
 import debug from "debug";
 
 import { uploadFile } from "./models/s3";
@@ -12,9 +7,7 @@ import { downloadFile } from "./utils-server";
 
 const log = debug("blog:federation");
 
-export async function upsertActor(
-  actor: Awaited<ReturnType<Activity["getActor"]>>,
-) {
+export async function upsertActor(actor: Awaited<ReturnType<Activity["getActor"]>>) {
   return await prisma
     .$transaction(async (tx) => {
       if (!actor || !actor.id || !actor.inboxId) {
@@ -94,10 +87,8 @@ export async function upsertActor(
     });
 }
 
-export function isPublic(toIds: URL[] | string[], ccIds: URL[] | string[]) {
-  const toIdsUrls = toIds.map((url) =>
-    typeof url === "string" ? new URL(url) : url,
-  );
+export function isPublic(toIds: URL[] | string[]) {
+  const toIdsUrls = toIds.map((url) => (typeof url === "string" ? new URL(url) : url));
 
   if (toIdsUrls.find((url) => url.href === PUBLIC_COLLECTION.href)) {
     return true;
@@ -105,12 +96,8 @@ export function isPublic(toIds: URL[] | string[], ccIds: URL[] | string[]) {
 }
 
 export function isNonList(toIds: URL[] | string[], ccIds: URL[] | string[]) {
-  const toIdsUrls = toIds.map((url) =>
-    typeof url === "string" ? new URL(url) : url,
-  );
-  const ccIdsUrls = ccIds.map((url) =>
-    typeof url === "string" ? new URL(url) : url,
-  );
+  const toIdsUrls = toIds.map((url) => (typeof url === "string" ? new URL(url) : url));
+  const ccIdsUrls = ccIds.map((url) => (typeof url === "string" ? new URL(url) : url));
 
   if (
     toIdsUrls.find((url) => url.href !== PUBLIC_COLLECTION.href) &&
@@ -121,16 +108,9 @@ export function isNonList(toIds: URL[] | string[], ccIds: URL[] | string[]) {
   return false;
 }
 
-export function isFollowersOnly(
-  toIds: URL[] | string[],
-  ccIds: URL[] | string[],
-) {
-  const toIdsUrls = toIds.map((url) =>
-    typeof url === "string" ? new URL(url) : url,
-  );
-  const ccIdsUrls = ccIds.map((url) =>
-    typeof url === "string" ? new URL(url) : url,
-  );
+export function isFollowersOnly(toIds: URL[] | string[], ccIds: URL[] | string[]) {
+  const toIdsUrls = toIds.map((url) => (typeof url === "string" ? new URL(url) : url));
+  const ccIdsUrls = ccIds.map((url) => (typeof url === "string" ? new URL(url) : url));
 
   if (
     !toIdsUrls.find((url) => url.href === PUBLIC_COLLECTION.href) &&

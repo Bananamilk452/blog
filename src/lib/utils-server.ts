@@ -1,11 +1,9 @@
 import "server-only";
-
 import ky from "ky";
 import { headers } from "next/headers";
 
-import { MAX_DOWNLOAD_SIZE } from "~/constants";
-
 import { auth } from "./auth";
+import { MAX_DOWNLOAD_SIZE } from "~/constants";
 
 export async function getValidSession() {
   const session = await auth.api.getSession({

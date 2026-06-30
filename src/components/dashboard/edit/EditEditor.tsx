@@ -42,13 +42,10 @@ export function EditEditor() {
   return (
     <div className="flex h-dvh flex-col">
       <Editor />
-      <div className="bg-accent flex justify-between p-4">
+      <div className="flex justify-between bg-accent p-4">
         <BackButton>뒤로가기</BackButton>
         <div className="flex items-center gap-4">
-          <Button
-            disabled={isSaveDisabled}
-            onClick={() => setIsUpdatePostModalOpen(true)}
-          >
+          <Button disabled={isSaveDisabled} onClick={() => setIsUpdatePostModalOpen(true)}>
             수정
           </Button>
           <UpdatePostModal

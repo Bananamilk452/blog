@@ -38,19 +38,15 @@ export function PostPage({ slug }: { slug: string }) {
             {post.state === "draft" && <Badge>임시글</Badge>}
           </h1>
 
-          {post.user && session?.user.id === post.user.id && (
-            <PostDropdownMenu post={post} />
-          )}
+          {post.user && session?.user.id === post.user.id && <PostDropdownMenu post={post} />}
         </div>
 
         <div className="relative z-10 mt-6 flex flex-wrap justify-between gap-4 border-t-2 border-dashed border-[#d8d0c5] pt-5 max-[720px]:flex-col">
           {post.user && <UserBadge user={post.user} />}
-          <div className="flex items-center gap-4 max-[720px]:items-start text-base">
+          <div className="flex items-center gap-4 text-base max-[720px]:items-start">
             <div>
               <p className="muted m-0">수정일</p>
-              <p className="m-0">
-                {format(new Date(post.updatedAt), "yyyy년 MM월 dd일 HH:mm")}
-              </p>
+              <p className="m-0">{format(new Date(post.updatedAt), "yyyy년 MM월 dd일 HH:mm")}</p>
             </div>
           </div>
         </div>
@@ -58,7 +54,7 @@ export function PostPage({ slug }: { slug: string }) {
 
       <section className="relative rounded-[30px] border-2 border-[#d8d0c5] bg-[#fffdf5]/95 p-8 shadow-[var(--shadow)] before:pointer-events-none before:absolute before:inset-2.5 before:rounded-[inherit] before:border before:border-dashed before:border-[#a46d43]/20 max-[900px]:p-5">
         <div
-          className="prose relative z-10"
+          className="relative z-10 prose"
           dangerouslySetInnerHTML={{ __html: post.content }}
         ></div>
       </section>

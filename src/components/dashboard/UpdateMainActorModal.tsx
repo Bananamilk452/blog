@@ -4,16 +4,6 @@ import { useEffect, useMemo } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
-import {
-  getMainActor,
-  updateMainActor as updateMainActorAction,
-} from "~/lib/actions/actor";
-import { getQueryClient } from "~/lib/getQueryClient";
-import {
-  UpdateMainActorForm,
-  UpdateMainActorFormSchema,
-} from "~/types/zod/UpdateMainActorFormSchema";
-
 import { Spinner } from "../Spinner";
 import { Button } from "../ui/button";
 import {
@@ -24,17 +14,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "../ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "../ui/form";
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
 import { ActorCard } from "./ActorCard";
+import { getMainActor, updateMainActor as updateMainActorAction } from "~/lib/actions/actor";
+import { getQueryClient } from "~/lib/getQueryClient";
+import {
+  UpdateMainActorForm,
+  UpdateMainActorFormSchema,
+} from "~/types/zod/UpdateMainActorFormSchema";
 
 interface UpdateMainActorModalProps {
   open: boolean;
@@ -42,11 +31,7 @@ interface UpdateMainActorModalProps {
   actor: Awaited<ReturnType<typeof getMainActor>>["actor"];
 }
 
-export function UpdateMainActorModal({
-  open,
-  setOpen,
-  actor,
-}: UpdateMainActorModalProps) {
+export function UpdateMainActorModal({ open, setOpen, actor }: UpdateMainActorModalProps) {
   const form = useForm<UpdateMainActorForm>({
     resolver: zodResolver(UpdateMainActorFormSchema),
     defaultValues: {
@@ -131,10 +116,7 @@ export function UpdateMainActorModal({
         <ActorCard actor={previewableActor} />
 
         <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="flex flex-col gap-4"
-          >
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
             <FormField
               control={form.control}
               name="name"
@@ -156,11 +138,7 @@ export function UpdateMainActorModal({
                 <FormItem>
                   <FormLabel>소개</FormLabel>
                   <FormControl>
-                    <Textarea
-                      className="resize-none"
-                      placeholder="소개"
-                      {...field}
-                    />
+                    <Textarea className="resize-none" placeholder="소개" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

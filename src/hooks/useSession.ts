@@ -14,6 +14,6 @@ export function useSession() {
       }
 
       return data.data;
-    }
+    },
   });
 }

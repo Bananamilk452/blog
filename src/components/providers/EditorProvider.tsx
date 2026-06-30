@@ -41,7 +41,5 @@ export const EditorProvider: React.FC<EditorProviderProps> = ({ children }) => {
     setEditor,
   };
 
-  return (
-    <EditorContext.Provider value={value}>{children}</EditorContext.Provider>
-  );
+  return <EditorContext.Provider value={value}>{children}</EditorContext.Provider>;
 };

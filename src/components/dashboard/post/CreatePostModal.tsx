@@ -26,14 +26,8 @@ import {
   FormMessage,
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
-import {
-  createPost as createPostAction,
-  getCategories,
-} from "~/lib/actions/post";
-import {
-  CreatePostForm,
-  CreatePostFormSchema,
-} from "~/types/zod/CreatePostFormSchema";
+import { createPost as createPostAction, getCategories } from "~/lib/actions/post";
+import { CreatePostForm, CreatePostFormSchema } from "~/types/zod/CreatePostFormSchema";
 
 interface CreatePostModalProps {
   title: string;
@@ -42,12 +36,7 @@ interface CreatePostModalProps {
   setOpen: (open: boolean) => void;
 }
 
-export function CreatePostModal({
-  title,
-  content,
-  open,
-  setOpen,
-}: CreatePostModalProps) {
+export function CreatePostModal({ title, content, open, setOpen }: CreatePostModalProps) {
   const router = useRouter();
 
   const form = useForm<CreatePostForm>({
@@ -78,9 +67,7 @@ export function CreatePostModal({
   });
 
   const categoryOptions = useMemo(() => {
-    return categories
-      ? categories.map((c) => ({ label: c.name, value: c.name }))
-      : [];
+    return categories ? categories.map((c) => ({ label: c.name, value: c.name })) : [];
   }, [categories]);
 
   const { mutate: createPost, status: createPostStatus } = useMutation({

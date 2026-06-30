@@ -9,9 +9,7 @@ export async function getMainActor() {
   return actorService.getMainActor();
 }
 
-export async function updateMainActor(
-  data: Parameters<ActorService["updateMainActor"]>[0],
-) {
+export async function updateMainActor(data: Parameters<ActorService["updateMainActor"]>[0]) {
   await getValidAdminSession();
 
   const actorService = new ActorService();

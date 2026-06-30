@@ -1,10 +1,5 @@
 import { cva } from "class-variance-authority";
-import {
-  CircleAlertIcon,
-  CircleCheckIcon,
-  InfoIcon,
-  TriangleAlertIcon,
-} from "lucide-react";
+import { CircleAlertIcon, CircleCheckIcon, InfoIcon, TriangleAlertIcon } from "lucide-react";
 
 import type { VariantProps } from "class-variance-authority";
 

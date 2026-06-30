@@ -9,25 +9,13 @@ export function Navbar() {
         <Logo />
         <ul className="relative z-10 m-0 flex list-none flex-wrap items-center justify-center gap-2 p-0 max-[900px]:w-full max-[900px]:justify-start">
           <li>
-            <SocialIcon
-              name="twitter"
-              label="Twitter"
-              href="https://x.com/lemon_gr_/"
-            />
+            <SocialIcon name="twitter" label="Twitter" href="https://x.com/lemon_gr_/" />
           </li>
           <li>
-            <SocialIcon
-              name="bluesky"
-              label="Bluesky"
-              href="https://bsky.app/profile/seoa.dev"
-            />
+            <SocialIcon name="bluesky" label="Bluesky" href="https://bsky.app/profile/seoa.dev" />
           </li>
           <li>
-            <SocialIcon
-              name="misskey"
-              label="Misskey"
-              href="https://serafuku.moe/@starterdroid"
-            />
+            <SocialIcon name="misskey" label="Misskey" href="https://serafuku.moe/@starterdroid" />
           </li>
         </ul>
       </nav>

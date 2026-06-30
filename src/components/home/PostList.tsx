@@ -6,33 +6,29 @@ import Image from "next/image";
 import Link from "next/link";
 import { Fragment } from "react";
 
+import { InfiniteScrollTrigger } from "../InfiniteScrollTrigger";
 import { PAGE_SIZE } from "~/constants";
 import { getPosts } from "~/lib/actions/post";
 
-import { InfiniteScrollTrigger } from "../InfiniteScrollTrigger";
-
 export function PostList() {
-  const { data, fetchNextPage, hasNextPage, isFetching } =
-    useSuspenseInfiniteQuery({
-      queryKey: ["posts", { limit: PAGE_SIZE }],
-      queryFn: ({ pageParam }) =>
-        getPosts({ limit: PAGE_SIZE, page: pageParam }),
-      getNextPageParam: (lastPage, allPages, lastPageParam) => {
-        if (lastPage.records.length < PAGE_SIZE) {
-          return undefined;
-        }
-        return lastPageParam + 1;
-      },
-      initialPageParam: 1,
-    });
+  const { data, fetchNextPage, hasNextPage, isFetching } = useSuspenseInfiniteQuery({
+    queryKey: ["posts", { limit: PAGE_SIZE }],
+    queryFn: ({ pageParam }) => getPosts({ limit: PAGE_SIZE, page: pageParam }),
+    getNextPageParam: (lastPage, allPages, lastPageParam) => {
+      if (lastPage.records.length < PAGE_SIZE) {
+        return undefined;
+      }
+      return lastPageParam + 1;
+    },
+    initialPageParam: 1,
+  });
 
   return (
     <>
       <section className="relative mx-auto mb-8 grid max-w-[880px] gap-4 rounded-[26px] border-2 border-[#d8d0c5] bg-[#fffdf5] p-8 shadow-[var(--shadow)] before:pointer-events-none before:absolute before:inset-2.5 before:rounded-[inherit] before:border before:border-dashed before:border-[#a46d43]/20 max-[900px]:p-5">
         <h1 className="relative z-10">윤서아의 블로그</h1>
         <p className="relative z-10 m-0 max-w-[36rem] text-[1.05rem] text-[#40342b]">
-          종이 위에 메모를 쌓아두듯, 천천히 읽고 오래 남는 글들을 정리하는
-          공간입니다.
+          종이 위에 메모를 쌓아두듯, 천천히 읽고 오래 남는 글들을 정리하는 공간입니다.
         </p>
         <ul className="relative z-10 m-0 flex list-none flex-wrap gap-2.5 p-0">
           {["기록", "개발", "메모"].map((tag) => (

@@ -5,10 +5,7 @@ import { useState } from "react";
 import { BackButton } from "~/components/BackButton";
 import { Editor } from "~/components/dashboard/editor/DynamicEditor";
 import { CreatePostModal } from "~/components/dashboard/post/CreatePostModal";
-import {
-  EditorProvider,
-  useEditorContext,
-} from "~/components/providers/EditorProvider";
+import { EditorProvider, useEditorContext } from "~/components/providers/EditorProvider";
 import { Button } from "~/components/ui/button";
 
 export default function DashboardWritePage() {
@@ -28,13 +25,10 @@ function WriteEditor() {
   return (
     <div className="flex h-dvh flex-col">
       <Editor />
-      <div className="bg-accent flex justify-between p-4">
+      <div className="flex justify-between bg-accent p-4">
         <BackButton>뒤로가기</BackButton>
         <div className="flex items-center gap-4">
-          <Button
-            disabled={isSaveDisabled}
-            onClick={() => setIsCreatePostModalOpen(true)}
-          >
+          <Button disabled={isSaveDisabled} onClick={() => setIsCreatePostModalOpen(true)}>
             저장
           </Button>
           <CreatePostModal

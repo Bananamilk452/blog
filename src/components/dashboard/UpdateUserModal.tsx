@@ -4,14 +4,6 @@ import { useEffect, useMemo } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
-import { Image, User } from "~/generated/prisma";
-import { updateUser as updateUserAction } from "~/lib/actions/user";
-import { getQueryClient } from "~/lib/getQueryClient";
-import {
-  UpdateUserForm,
-  UpdateUserFormSchema,
-} from "~/types/zod/UpdateUserFormSchema";
-
 import { Spinner } from "../Spinner";
 import { Button } from "../ui/button";
 import {
@@ -22,16 +14,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "../ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "../ui/form";
 import { Input } from "../ui/input";
 import { UserCard } from "./UserCard";
+import { Image, User } from "~/generated/prisma";
+import { updateUser as updateUserAction } from "~/lib/actions/user";
+import { getQueryClient } from "~/lib/getQueryClient";
+import { UpdateUserForm, UpdateUserFormSchema } from "~/types/zod/UpdateUserFormSchema";
 
 interface UpdateUserModalProps {
   open: boolean;
@@ -112,10 +101,7 @@ export function UpdateUserModal({ open, setOpen, user }: UpdateUserModalProps) {
         <UserCard user={previewableUser} />
 
         <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="flex flex-col gap-4"
-          >
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
             <FormField
               control={form.control}
               name="name"
