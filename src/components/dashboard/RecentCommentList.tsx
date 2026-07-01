@@ -16,7 +16,7 @@ export async function RecentCommentList() {
       </CardHeader>
       <CardContent>
         {comments.length > 0 ? (
-          <ul className="flex flex-col divide-y divide-[#d8d0c5]">
+          <ul className="flex flex-col divide-y divide-(--line)">
             {comments.map((comment) => {
               const href = comment.url ?? (comment.post.slug ? `/post/${comment.post.slug}` : null);
 
@@ -27,23 +27,26 @@ export async function RecentCommentList() {
                       <span className="font-semibold">
                         {comment.actor.name ?? comment.actor.username}
                       </span>
-                      <span className="text-sm text-[#655648]">{comment.actor.handle}</span>
+                      <span className="text-sm text-(--ink-soft)">{comment.actor.handle}</span>
                     </div>
                     <time
-                      className="text-sm text-[#655648]"
+                      className="text-sm text-(--ink-soft)"
                       dateTime={comment.createdAt.toISOString()}
                     >
                       {format(comment.createdAt, "yyyy.MM.dd HH:mm")}
                     </time>
                   </div>
 
-                  <p className="line-clamp-2 text-sm text-[#40342b]">
+                  <p className="line-clamp-2 text-sm text-(--ink)">
                     {toPlainText(comment.content)}
                   </p>
 
-                  <div className="text-sm text-[#655648]">
+                  <div className="text-sm text-(--ink-soft)">
                     {href ? (
-                      <Link href={href} className="font-medium text-[#8a4f2a] hover:underline">
+                      <Link
+                        href={href}
+                        className="font-medium text-(--accent-strong) hover:underline"
+                      >
                         {comment.post.title}
                       </Link>
                     ) : (
@@ -56,7 +59,7 @@ export async function RecentCommentList() {
             })}
           </ul>
         ) : (
-          <p className="text-sm text-[#655648]">최근 댓글이 없습니다.</p>
+          <p className="text-sm text-(--ink-soft)">최근 댓글이 없습니다.</p>
         )}
       </CardContent>
     </Card>

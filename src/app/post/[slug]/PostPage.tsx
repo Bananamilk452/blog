@@ -27,7 +27,7 @@ export function PostPage({ slug }: { slug: string }) {
 
       <article className="mx-auto grid w-[min(860px,100%)] gap-5">
         {post.banner && (
-          <div className="relative min-h-[300px] overflow-hidden rounded-[28px] shadow-[var(--shadow)] sm:min-h-[420px]">
+          <div className="shadow(--shadow) relative min-h-[300px] overflow-hidden rounded-[28px] sm:min-h-[420px]">
             <Image
               fill={true}
               className="object-cover"
@@ -37,7 +37,7 @@ export function PostPage({ slug }: { slug: string }) {
           </div>
         )}
 
-        <section className="relative rounded-[30px] border-2 border-[#d8d0c5] bg-[#fffdf5]/95 p-8 shadow-[var(--shadow)] before:pointer-events-none before:absolute before:inset-2.5 before:rounded-[inherit] before:border before:border-dashed before:border-[#a46d43]/20 max-[900px]:p-5">
+        <section className="shadow(--shadow) relative rounded-[30px] border-2 border-(--line) bg-(--paper)/95 p-8 before:pointer-events-none before:absolute before:inset-2.5 before:rounded-[inherit] before:border before:border-dashed before:border-(--accent-paper)/20 max-[900px]:p-5">
           <div className="relative z-10 flex flex-wrap items-start justify-between gap-3">
             <h1 className="flex items-center gap-2 text-3xl font-bold">
               {post.title}
@@ -47,7 +47,7 @@ export function PostPage({ slug }: { slug: string }) {
             {post.user && session?.user.id === post.user.id && <PostDropdownMenu post={post} />}
           </div>
 
-          <div className="relative z-10 mt-6 flex flex-wrap justify-between gap-4 border-t-2 border-dashed border-[#d8d0c5] pt-5 max-[720px]:flex-col">
+          <div className="relative z-10 mt-6 flex flex-wrap justify-between gap-4 border-t-2 border-dashed border-(--line) pt-5 max-[720px]:flex-col">
             {post.user && <UserBadge user={post.user} />}
             <div className="flex items-center gap-4 text-base max-[720px]:items-start">
               <div>
@@ -58,11 +58,11 @@ export function PostPage({ slug }: { slug: string }) {
           </div>
         </section>
 
-        <section className="relative rounded-[30px] border-2 border-[#d8d0c5] bg-[#fffdf5]/95 p-8 shadow-[var(--shadow)] before:pointer-events-none before:absolute before:inset-2.5 before:rounded-[inherit] before:border before:border-dashed before:border-[#a46d43]/20 max-[900px]:p-5">
+        <section className="shadow(--shadow) relative rounded-[30px] border-2 border-(--line) bg-(--paper)/95 p-8 before:pointer-events-none before:absolute before:inset-2.5 before:rounded-[inherit] before:border before:border-dashed before:border-(--accent-paper)/20 max-[900px]:p-5">
           <div className="relative z-10" dangerouslySetInnerHTML={{ __html: contentHtml }}></div>
         </section>
 
-        <section className="relative rounded-[30px] border-2 border-[#d8d0c5] bg-[#fffdf5]/95 p-8 shadow-[var(--shadow)] before:pointer-events-none before:absolute before:inset-2.5 before:rounded-[inherit] before:border before:border-dashed before:border-[#a46d43]/20 max-[900px]:p-5">
+        <section className="shadow(--shadow) relative rounded-[30px] border-2 border-(--line) bg-(--paper)/95 p-8 before:pointer-events-none before:absolute before:inset-2.5 before:rounded-[inherit] before:border before:border-dashed before:border-(--accent-paper)/20 max-[900px]:p-5">
           <div className="relative z-10">
             <h3 className="mb-3 text-xl font-bold">댓글</h3>
             <PostComments comments={comments} />
@@ -137,10 +137,10 @@ function UserBadge({ user }: { user: UserWithAvatar }) {
           alt="Avatar"
           width={128}
           height={128}
-          className="size-17 rounded-full border-4 border-[#fff7cc]/95 object-cover"
+          className="size-17 rounded-full border-4 border-(--paper-note)/95 object-cover"
         />
       ) : (
-        <div className="size-17 rounded-full border-4 border-[#fff7cc]/95 bg-[#e6d6bf]" />
+        <div className="size-17 rounded-full border-4 border-(--paper-note)/95 bg-(--accent-muted)" />
       )}
 
       <div className="flex flex-col">

@@ -57,10 +57,10 @@ function CommentItem({
           <img
             src={comment.actor.avatar.url}
             alt={`${comment.actor.name} avatar`}
-            className="size-10 rounded-full border-2 border-[#fff7cc]/95 bg-[#e6d6bf] object-cover"
+            className="size-10 rounded-full border-2 border-(--paper-note)/95 bg-(--accent-muted) object-cover"
           />
         ) : (
-          <div className="size-10 rounded-full border-2 border-[#fff7cc]/95 bg-[#e6d6bf]" />
+          <div className="size-10 rounded-full border-2 border-(--paper-note)/95 bg-(--accent-muted)" />
         )}
       </div>
 
@@ -70,18 +70,18 @@ function CommentItem({
           <Link
             href={comment.actor.uri}
             target="_blank"
-            className="text-sm text-[#655648] hover:underline"
+            className="text-sm text-(--ink-soft) hover:underline"
           >
             {comment.actor.handle}
           </Link>
-          <span className="text-xs text-[#655648]">
+          <span className="text-xs text-(--ink-soft)">
             {format(new Date(comment.createdAt), "yyyy년 MM월 dd일 HH:mm")}
           </span>
         </div>
 
         <div className="mt-2">
           <p
-            className="wrap-break-words text-base whitespace-pre-wrap [&_a]:text-[#815232] [&_a]:underline"
+            className="wrap-break-words text-base whitespace-pre-wrap [&_a]:text-(--accent-strong) [&_a]:underline"
             dangerouslySetInnerHTML={{ __html: content }}
           />
         </div>
@@ -97,7 +97,7 @@ function CommentItem({
                     key={att.id}
                     src={att.url}
                     alt={att.name || "Comment Attachment"}
-                    className="mt-2 max-h-60 rounded-2xl border-2 border-[#d8d0c5] shadow-[var(--shadow-soft)]"
+                    className="shadow(--shadow-soft) mt-2 max-h-60 rounded-2xl border-2 border-(--line)"
                   />
                 );
               }
@@ -125,7 +125,7 @@ function CommentItem({
         )}
 
         {"replies" in comment && comment.replies && comment.replies.length > 0 && (
-          <div className="mt-4 ml-8 flex flex-col gap-4 border-l-2 border-dashed border-[#d8d0c5] pl-4">
+          <div className="mt-4 ml-8 flex flex-col gap-4 border-l-2 border-dashed border-(--line) pl-4">
             {comment.replies.map((reply) => (
               <CommentItem key={reply.id} comment={reply} />
             ))}
@@ -146,7 +146,7 @@ function ReplyButton({
   return (
     <button
       onClick={onToggle}
-      className="flex cursor-pointer items-center gap-1 text-[#655648] hover:text-[#a46d43]"
+      className="flex cursor-pointer items-center gap-1 text-(--ink-soft) hover:text-(--accent-paper)"
     >
       <span className="text-sm">{"replies" in comment && comment.replies.length}</span>
       <ReplyIcon className="size-4" />
@@ -156,7 +156,7 @@ function ReplyButton({
 
 function RenoteButton() {
   return (
-    <button className="flex cursor-pointer items-center gap-1 text-[#655648] hover:text-[#a46d43]">
+    <button className="flex cursor-pointer items-center gap-1 text-(--ink-soft) hover:text-(--accent-paper)">
       <Repeat2Icon className="size-4" />
     </button>
   );
@@ -164,7 +164,7 @@ function RenoteButton() {
 
 function LikeButton() {
   return (
-    <button className="flex cursor-pointer items-center gap-1 text-[#655648] hover:text-[#a46d43]">
+    <button className="flex cursor-pointer items-center gap-1 text-(--ink-soft) hover:text-(--accent-paper)">
       <HeartIcon className="size-4" />
     </button>
   );
@@ -247,7 +247,7 @@ function ReplyEditor({
   });
 
   return (
-    <div className="relative rounded-2xl border-2 border-[#d8d0c5] bg-[#fffdf5] p-4 shadow-[var(--shadow-soft)] before:pointer-events-none before:absolute before:inset-2 before:rounded-[inherit] before:border before:border-dashed before:border-[#a46d43]/20">
+    <div className="shadow(--shadow-soft) relative rounded-2xl border-2 border-(--line) bg-(--paper) p-4 before:pointer-events-none before:absolute before:inset-2 before:rounded-[inherit] before:border before:border-dashed before:border-(--accent-paper)/20">
       <div className="relative z-10">
         <Form {...form}>
           <form onSubmit={handleSubmit}>

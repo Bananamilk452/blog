@@ -171,7 +171,7 @@ function PostCard({ posts }: { posts: Post[] }) {
     <>
       {posts.map((post) => (
         <div
-          className="flex w-full flex-col gap-2 rounded-3xl border-2 border-[#d8d0c5] bg-[#fffdf5] px-4 pt-4 pb-6 text-[#40342b] shadow-[var(--shadow-soft)]"
+          className="shadow(--shadow-soft) flex w-full flex-col gap-2 rounded-3xl border-2 border-(--line) bg-(--paper) px-4 pt-4 pb-6 text-(--ink)"
           key={post.id}
         >
           <div className="flex items-center">

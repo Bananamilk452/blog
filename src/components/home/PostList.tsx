@@ -25,16 +25,16 @@ export function PostList() {
 
   return (
     <>
-      <section className="relative mx-auto mb-8 grid max-w-[880px] gap-4 rounded-[26px] border-2 border-[#d8d0c5] bg-[#fffdf5] p-8 shadow-[var(--shadow)] before:pointer-events-none before:absolute before:inset-2.5 before:rounded-[inherit] before:border before:border-dashed before:border-[#a46d43]/20 max-[900px]:p-5">
+      <section className="shadow(--shadow) relative mx-auto mb-8 grid max-w-[880px] gap-4 rounded-[26px] border-2 border-(--line) bg-(--paper) p-8 before:pointer-events-none before:absolute before:inset-2.5 before:rounded-[inherit] before:border before:border-dashed before:border-(--accent-paper)/20 max-[900px]:p-5">
         <h1 className="relative z-10 text-3xl font-bold">윤서아의 블로그</h1>
-        <p className="relative z-10 m-0 max-w-[36rem] text-[1.05rem] text-[#40342b]">
+        <p className="relative z-10 m-0 max-w-[36rem] text-[1.05rem] text-(--ink)">
           종이 위에 메모를 쌓아두듯, 천천히 읽고 오래 남는 글들을 정리하는 공간입니다.
         </p>
         <ul className="relative z-10 m-0 flex list-none flex-wrap gap-2.5 p-0">
           {["기록", "개발", "메모"].map((tag) => (
             <li
               key={tag}
-              className="handwritten rounded-full bg-[#a46d43]/10 px-3 py-1 text-[0.9rem] tracking-[0.03em] text-[#655648]"
+              className="handwritten rounded-full bg-(--accent-paper)/10 px-3 py-1 text-[0.9rem] tracking-[0.03em] text-(--ink-soft)"
             >
               {tag}
             </li>
@@ -87,9 +87,9 @@ export function PostCard({
   return (
     <Link
       href={`/post/${post.slug}`}
-      className="group relative grid h-full gap-4 rounded-3xl border-2 border-[#d8d0c5] bg-[#fffdf5] p-5 text-inherit no-underline shadow-[var(--shadow)] transition-[transform,box-shadow] before:pointer-events-none before:absolute before:inset-2.5 before:rounded-[inherit] before:border before:border-dashed before:border-[#a46d43]/20 odd:-rotate-[0.6deg] even:rotate-[0.6deg] hover:-translate-y-1 hover:rotate-0 hover:text-inherit hover:shadow-[0_18px_34px_rgba(70,48,31,0.18)]"
+      className="group shadow(--shadow) relative grid h-full gap-4 rounded-3xl border-2 border-(--line) bg-(--paper) p-5 text-inherit no-underline transition-[transform,box-shadow] before:pointer-events-none before:absolute before:inset-2.5 before:rounded-[inherit] before:border before:border-dashed before:border-(--accent-paper)/20 odd:-rotate-[0.6deg] even:rotate-[0.6deg] hover:-translate-y-1 hover:rotate-0 hover:text-inherit hover:shadow-[0_18px_34px_rgba(70,48,31,0.18)]"
     >
-      <div className="relative z-10 aspect-[16/10] overflow-hidden rounded-2xl bg-[#e6d6bf] shadow-[var(--shadow-soft)]">
+      <div className="shadow(--shadow-soft) relative z-10 aspect-[16/10] overflow-hidden rounded-2xl bg-(--accent-muted)">
         {post.banner && (
           <Image
             src={post.banner.url}
@@ -102,7 +102,7 @@ export function PostCard({
       </div>
       <div className="relative z-10 grid gap-3">
         {post.publishedAt && (
-          <p className="handwritten m-0 text-[0.95rem] text-[#655648]">
+          <p className="handwritten m-0 text-[0.95rem] text-(--ink-soft)">
             {format(post.publishedAt, "yyyy-MM-dd")}
           </p>
         )}
@@ -110,7 +110,7 @@ export function PostCard({
         <p className="text-sm">
           {post.category?.name} - {post.user.name} (@{post.user.username})
         </p>
-        {excerpt && <p className="m-0 text-[#655648]">{excerpt}</p>}
+        {excerpt && <p className="m-0 text-(--ink-soft)">{excerpt}</p>}
       </div>
     </Link>
   );

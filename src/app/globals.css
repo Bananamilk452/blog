@@ -174,7 +174,7 @@
   code {
     padding: 0.15rem 0.35rem;
     border-radius: 6px;
-    background: rgba(164, 109, 67, 0.1);
+    background: var(--code-highlight);
     font-size: 0.92em;
   }
 
@@ -196,7 +196,7 @@
   blockquote {
     padding: 1rem 1.2rem;
     border-left: 5px solid var(--accent-paper);
-    background: rgba(255, 247, 204, 0.7);
+    background: color-mix(in srgb, var(--paper-note) 70%, transparent);
     border-radius: 0 14px 14px 0;
     font-style: italic;
   }

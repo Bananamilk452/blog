@@ -33,7 +33,7 @@ export function SocialIcon({
       rel="noreferrer"
       aria-label={label}
       className={cn(
-        "inline-flex size-10 items-center justify-center rounded-full bg-[#fff7cc]/70 text-[#40342b] no-underline transition-transform hover:-translate-y-0.5 hover:text-[#a46d43]",
+        "inline-flex size-10 items-center justify-center rounded-full bg-(--paper-note)/70 text-(--ink) no-underline transition-transform hover:-translate-y-0.5 hover:text-(--accent-paper)",
         className,
       )}
     >

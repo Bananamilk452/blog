@@ -34,7 +34,7 @@ export default function Editor() {
         />
       </div>
 
-      <hr className="m-4 border-[#d8d0c5]" />
+      <hr className="m-4 border-(--line)" />
 
       <BlockNoteView className="min-h-0 grow overflow-auto *:bg-secondary!" editor={editor} />
     </div>
