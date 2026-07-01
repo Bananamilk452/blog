@@ -68,7 +68,7 @@ export async function getCategories() {
 export async function getCommentsBySlug(slug: string) {
   const session = await getOptionalSession();
 
-  const postService = new PostService(session?.user.id);
+  const postService = new PostService(session?.user.id, session?.user.role === "admin");
 
   return await postService.getCommentsBySlug(slug);
 }

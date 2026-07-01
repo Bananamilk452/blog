@@ -15,9 +15,11 @@ import { requireUserId } from "~/lib/utils-server";
 
 export class PostService {
   userId?: string;
+  isAdmin: boolean;
 
-  constructor(userId?: string) {
+  constructor(userId?: string, isAdmin = false) {
     this.userId = userId;
+    this.isAdmin = isAdmin;
   }
 
   @requireUserId
@@ -77,7 +79,7 @@ export class PostService {
   }
 
   async getCommentsBySlug(slug: string) {
-    return await getCommentsBySlug(slug);
+    return await getCommentsBySlug(slug, { includeFollowersOnly: this.isAdmin });
   }
 
   async getRecentComments(limit?: number) {

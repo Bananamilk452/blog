@@ -37,7 +37,8 @@ vi.mock("../lib/models/s3", () => ({ uploadFile: vi.fn() }));
 vi.mock("../lib/utils-federation", () => ({
   isPublic: (toIds: string[]) => toIds.includes("https://www.w3.org/ns/activitystreams#Public"),
   isNonList: () => false,
-  isFollowersOnly: () => false,
+  isFollowersOnly: (toIds: string[], ccIds: string[]) =>
+    ![...toIds, ...ccIds].includes("https://www.w3.org/ns/activitystreams#Public"),
 }));
 vi.mock("marked", () => ({ marked: vi.fn(async (content: string) => `<p>${content}</p>`) }));
 vi.mock("isomorphic-dompurify", () => ({
@@ -190,9 +191,50 @@ describe("post model federation publishing", () => {
     expect(comments[1].parentId).toBe("missing-comment");
     expect(comments[1].replies).toEqual([]);
   });
+
+  it("hides followers-only comments from non-admin readers", async () => {
+    const publicComment = comment({ id: "comment-1", parentId: null });
+    const followersOnlyComment = comment({
+      id: "comment-2",
+      parentId: null,
+      to: ["https://example.com/users/alice/followers"],
+    });
+
+    mocks.prisma.posts.findUniqueOrThrow.mockResolvedValueOnce({ id: "post-1" });
+    mocks.prisma.comment.findMany.mockResolvedValueOnce([publicComment, followersOnlyComment]);
+
+    const comments = await postModel.getCommentsBySlug("hello");
+
+    expect(comments.map((comment) => comment.id)).toEqual(["comment-1"]);
+  });
+
+  it("returns followers-only comments to admin readers", async () => {
+    const followersOnlyComment = comment({
+      id: "comment-1",
+      parentId: null,
+      to: ["https://example.com/users/alice/followers"],
+    });
+
+    mocks.prisma.posts.findUniqueOrThrow.mockResolvedValueOnce({ id: "post-1" });
+    mocks.prisma.comment.findMany.mockResolvedValueOnce([followersOnlyComment]);
+
+    const comments = await postModel.getCommentsBySlug("hello", { includeFollowersOnly: true });
+
+    expect(comments.map((comment) => comment.id)).toEqual(["comment-1"]);
+  });
 });
 
-function comment({ id, parentId }: { id: string; parentId: string | null }) {
+function comment({
+  id,
+  parentId,
+  to = ["https://www.w3.org/ns/activitystreams#Public"],
+  cc = [],
+}: {
+  id: string;
+  parentId: string | null;
+  to?: string[];
+  cc?: string[];
+}) {
   return {
     id,
     uri: `https://example.com/post/${id}`,
@@ -218,8 +260,8 @@ function comment({ id, parentId }: { id: string; parentId: string | null }) {
     parentId,
     content: id,
     url: `https://example.com/post/${id}`,
-    to: [],
-    cc: [],
+    to,
+    cc,
     mentions: [],
     attachment: [],
     createdAt: new Date("2026-01-01T00:00:00.000Z"),
