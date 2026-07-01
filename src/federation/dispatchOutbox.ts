@@ -1,10 +1,13 @@
 import { Article, Create } from "@fedify/fedify";
 
+import { log } from "./log";
 import { prisma } from "~/lib/prisma";
 
 import type { RequestContext } from "@fedify/fedify";
 
 export async function dispatchOutbox(ctx: RequestContext<unknown>, identifier: string) {
+  log(`Dispatching outbox for identifier: ${identifier}`);
+
   const posts = await prisma.posts.findMany({
     where: {
       state: "published",

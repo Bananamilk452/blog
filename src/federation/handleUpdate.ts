@@ -1,11 +1,14 @@
 import { isActor, Note } from "@fedify/fedify";
 
+import { log } from "./log";
 import { prisma } from "~/lib/prisma";
 import { formatNoteAttachments, getTagFromNote, upsertActor } from "~/lib/utils-federation";
 
 import type { InboxContext, Update } from "@fedify/fedify";
 
 export async function handleUpdate(_ctx: InboxContext<unknown>, update: Update) {
+  log(`Received Update activity: ${update.id?.href}`);
+
   const object = await update.getObject();
   if (!object) return;
 
@@ -17,8 +20,17 @@ export async function handleUpdate(_ctx: InboxContext<unknown>, update: Update) 
       include: { actor: true },
     });
 
-    if (!comment) return;
-    if (update.actorId?.href !== comment.actor.uri) return;
+    if (!comment) {
+      log(`Comment not found for update: ${object.id.href}`);
+      return;
+    }
+
+    if (update.actorId?.href !== comment.actor.uri) {
+      log(
+        `Unauthorized update attempt. Request actor: ${update.actorId?.href}, Comment actor: ${comment.actor.uri}`,
+      );
+      return;
+    }
 
     await prisma.comment.update({
       where: { id: comment.id },
@@ -34,12 +46,18 @@ export async function handleUpdate(_ctx: InboxContext<unknown>, update: Update) 
         },
       },
     });
+
+    log(`Updated comment: ${comment.id}`);
     return;
   }
 
   if (isActor(object)) {
-    if (update.actorId?.href !== object.id?.href) return;
+    if (update.actorId?.href !== object.id?.href) {
+      log("Unauthorized actor update attempt: Actor can only update themselves");
+      return;
+    }
 
     await upsertActor(object);
+    log(`Updated actor profile: ${object.id?.href}`);
   }
 }

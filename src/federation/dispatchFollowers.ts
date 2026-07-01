@@ -1,8 +1,11 @@
+import { log } from "./log";
 import { prisma } from "~/lib/prisma";
 
 import type { Context, Recipient } from "@fedify/fedify";
 
 export async function dispatchFollowers(_ctx: Context<unknown>, identifier: string) {
+  log(`Dispatching followers for identifier: ${identifier}`);
+
   const followers = await prisma.follows.findMany({
     where: {
       following: {

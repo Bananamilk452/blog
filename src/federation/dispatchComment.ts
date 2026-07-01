@@ -1,6 +1,7 @@
 import { Document, Mention, Note } from "@fedify/fedify";
 import { Temporal } from "@js-temporal/polyfill";
 
+import { log } from "./log";
 import { prisma } from "~/lib/prisma";
 
 import type { RequestContext } from "@fedify/fedify";
@@ -21,7 +22,10 @@ export async function dispatchComment(ctx: RequestContext<unknown>, values: { sl
     },
   });
 
-  if (!comment) return null;
+  if (!comment) {
+    log(`Comment not found for URI: ${commentUri}`);
+    return null;
+  }
 
   return new Note({
     id: new URL(comment.uri),

@@ -1,10 +1,13 @@
 import { ActorKeyPair, Endpoints, Image, Person } from "@fedify/fedify";
 
+import { log } from "./log";
 import { prisma } from "~/lib/prisma";
 
 import type { RequestContext } from "@fedify/fedify";
 
 export async function dispatchActor(ctx: RequestContext<unknown>, identifier: string) {
+  log(`Dispatching actor for identifier: ${identifier}`);
+
   const actor = await prisma.actor.findFirst({
     where: { username: identifier, userId: { not: null } },
     include: { avatar: true, banner: true },

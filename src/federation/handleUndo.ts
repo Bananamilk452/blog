@@ -1,10 +1,13 @@
 import { Follow } from "@fedify/fedify";
 
+import { log } from "./log";
 import { prisma } from "~/lib/prisma";
 
 import type { InboxContext, Undo } from "@fedify/fedify";
 
 export async function handleUndo(ctx: InboxContext<unknown>, undo: Undo) {
+  log(`Received Undo activity: ${undo.id?.href}`);
+
   const object = await undo.getObject();
   if (!(object instanceof Follow)) return;
   if (undo.actorId == null || object.objectId == null) return;
@@ -26,7 +29,12 @@ export async function handleUndo(ctx: InboxContext<unknown>, undo: Undo) {
     },
   });
 
-  if (!followingActor || !followerActor) return;
+  if (!followingActor || !followerActor) {
+    log("Either following or follower actor not found.");
+    return;
+  }
+
+  log(`Processing unfollow from ${followerActor.handle} to @${followingActor.handle}`);
 
   await prisma.follows.deleteMany({
     where: {
