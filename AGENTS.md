@@ -1,32 +1,24 @@
-# CLAUDE.md
+# Repository Instructions
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## Commands
 
-## Common Commands
-
-- **Development server:** `pnpm dev`
-- **Build:** `pnpm build`
-- **Start server:** `pnpm start`
-- **Lint:** `pnpm lint`
-- **Format:** `pnpm format`
-- **Prisma:** `pnpm prisma <command>`
-
-## Development Workflow
-
-After completing a task, please run the following commands to ensure code quality and prevent regressions:
-
-1.  `pnpm format`: To format the code.
-2.  `pnpm build`: To check for any build errors.
+- Use `pnpm` with the pinned package manager in `package.json` (`pnpm@11.9.0`).
+- Dev server: `pnpm dev`; production server after a build: `pnpm start`.
+- Final checks for code changes: run `pnpm format`, `pnpm lint`, `pnpm typecheck`, `pnpm test`. Do not run `pnpm build` as the default final check.
+- Tests: `pnpm test` runs `vitest run`; use `pnpm test -- <file-or-pattern>` for focused Vitest runs.
+- Formatting/linting are mutating commands: `pnpm format` runs `oxfmt`, and `pnpm lint` runs `oxlint --fix`.
+- Prisma commands go through `pnpm prisma <command>`; the schema is `src/prisma/schema.prisma` via `prisma.config.ts`.
 
 ## Architecture
 
-This is a special blog project that uses the [fedify](https://fedify.dev/) package to expose blog posts to the fediverse. Fedify is an ActivityPub server framework for building federated server apps. For more details on how to work with fedify, please refer to the documentation found at [https://fedify.dev/llms.txt](https://fedify.dev/llms.txt).
+- This is a Next.js App Router app under `src/app`; imports use `~/*` for `src/*`.
+- Fediverse/ActivityPub support is wired through `src/middleware.ts` using `@fedify/next`; core Fedify setup and dispatch/inbox handlers live in `src/federation.ts`.
+- `src/federation.ts` requires `REDIS_URL` and `PUBLIC_URL` at module load. Tests provide defaults in `vitest.setup.ts` and mock Redis/Fedify dependencies where needed.
+- Prisma client is generated into `src/generated/prisma` and imported from `~/generated/prisma`, not `@prisma/client`.
+- Database schema and migrations live under `src/prisma`; the datasource is PostgreSQL and uses `DATABASE_URL`.
+- Runtime services for local containers are Postgres 17 and Redis 8 in `compose.dev.yml`; production compose uses `compose.yml`.
 
-The project is built with [Next.js](https://nextjs.org/) using the App Router. The main parts of the application are in the `src` directory.
+## Repo Quirks
 
-- `src/app`: Contains the pages and API routes for the application.
-- `src/components`: Contains reusable React components.
-- `src/hooks`: Contains custom React hooks.
-- `src/lib`: Contains utility functions.
-- `src/prisma`: Contains the Prisma schema and is used for database access.
-- `src/federation.ts`: This file contains the core logic for fedify integration. It's recommended to examine this file to understand its role in the application.
+- `next.config.ts` marks `rdf-canonize-native` as a false webpack alias for Fedify-related dependencies.
+- Next image remote patterns depend on `S3_PUBLIC_URL`, so missing S3 env can affect config loading/build-like checks.

@@ -27,5 +27,5 @@
     "types": ["vitest/globals"]
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "blog-astro"]
+  "exclude": ["node_modules"]
 }
