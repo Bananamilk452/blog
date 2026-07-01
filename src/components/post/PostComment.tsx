@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import DOMPurify from "isomorphic-dompurify";
 import { HeartIcon, ImageIcon, Repeat2Icon, ReplyIcon, XIcon } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -19,7 +19,7 @@ import { CreateCommentForm, CreateCommentFormSchema } from "~/types/zod/CreateCo
 
 type CommentWithActor = Awaited<ReturnType<typeof getCommentsBySlug>>[number];
 
-export function PostComments({ comments, slug }: { comments: CommentWithActor[]; slug: string }) {
+export function PostComments({ comments }: { comments: CommentWithActor[] }) {
   if (comments.length === 0) {
     return <p className="muted py-8 text-center">아직 댓글이 없습니다.</p>;
   }
@@ -27,7 +27,7 @@ export function PostComments({ comments, slug }: { comments: CommentWithActor[];
   return (
     <div className="flex flex-col gap-6">
       {comments.map((comment) => (
-        <CommentItem key={comment.id} comment={comment} slug={slug} />
+        <CommentItem key={comment.id} comment={comment} />
       ))}
     </div>
   );
@@ -35,10 +35,8 @@ export function PostComments({ comments, slug }: { comments: CommentWithActor[];
 
 function CommentItem({
   comment,
-  slug,
 }: {
   comment: CommentWithActor | CommentWithActor["replies"][number];
-  slug: string;
 }) {
   const { data: session } = useSession();
 
@@ -120,7 +118,6 @@ function CommentItem({
               initialContent={initialContent}
               postId={comment.postId}
               parentId={comment.id}
-              slug={slug}
               onCancel={() => setShowReplyEditor(false)}
               onSuccess={() => setShowReplyEditor(false)}
             />
@@ -130,7 +127,7 @@ function CommentItem({
         {"replies" in comment && comment.replies && comment.replies.length > 0 && (
           <div className="mt-4 ml-8 flex flex-col gap-4 border-l-2 border-dashed border-[#d8d0c5] pl-4">
             {comment.replies.map((reply) => (
-              <CommentItem key={reply.id} comment={reply} slug={slug} />
+              <CommentItem key={reply.id} comment={reply} />
             ))}
           </div>
         )}
@@ -177,17 +174,16 @@ function ReplyEditor({
   initialContent,
   postId,
   parentId,
-  slug,
   onCancel,
   onSuccess,
 }: {
   initialContent?: string;
   postId: string;
   parentId: string;
-  slug: string;
   onCancel: () => void;
   onSuccess: () => void;
 }) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
@@ -299,6 +295,7 @@ function ReplyEditor({
             <div className="mt-2 flex items-center gap-2">
               <label className="cursor-pointer">
                 <input
+                  ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   multiple
@@ -306,7 +303,11 @@ function ReplyEditor({
                   className="hidden"
                   disabled={imageFiles.length >= 4}
                 />
-                <Button disabled={imageFiles.length >= 4} type="button">
+                <Button
+                  disabled={imageFiles.length >= 4}
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                >
                   <ImageIcon className="size-4" />
                   <span>이미지 추가 ({imageFiles.length}/4)</span>
                 </Button>
