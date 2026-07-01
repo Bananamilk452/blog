@@ -366,6 +366,22 @@ export async function getCommentsBySlug(slug: string) {
   return topLevelComments;
 }
 
+export async function getRecentComments(limit = 5) {
+  return await prisma.comment.findMany({
+    orderBy: { createdAt: "desc" },
+    take: limit,
+    include: {
+      actor: true,
+      post: {
+        select: {
+          title: true,
+          slug: true,
+        },
+      },
+    },
+  });
+}
+
 export async function createComment(
   actorId: string,
   data: {

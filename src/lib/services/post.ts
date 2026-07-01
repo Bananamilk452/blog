@@ -7,6 +7,7 @@ import {
   getPost,
   getPostBySlug,
   getPosts,
+  getRecentComments,
   updatePost,
 } from "~/lib/models/post";
 import { prisma } from "~/lib/prisma";
@@ -77,6 +78,10 @@ export class PostService {
 
   async getCommentsBySlug(slug: string) {
     return await getCommentsBySlug(slug);
+  }
+
+  async getRecentComments(limit?: number) {
+    return await getRecentComments(limit);
   }
 
   @requireUserId

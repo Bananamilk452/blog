@@ -3,6 +3,7 @@ import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { ManageMainActor } from "~/components/dashboard/ManageMainActor";
 import { ManageUser } from "~/components/dashboard/ManageUser";
 import { PostList } from "~/components/dashboard/post/PostList";
+import { RecentCommentList } from "~/components/dashboard/RecentCommentList";
 import { DefaultLayout } from "~/layouts/default";
 import { getMainActor } from "~/lib/actions/actor";
 import { getUser } from "~/lib/actions/user";
@@ -26,6 +27,7 @@ export default function DashboardPage() {
       <div className="flex flex-col gap-6">
         <h1 className="text-3xl font-bold">대시보드</h1>
         <PostList />
+        <RecentCommentList />
 
         <HydrationBoundary state={dehydrate(queryClient)}>
           <ManageMainActor />

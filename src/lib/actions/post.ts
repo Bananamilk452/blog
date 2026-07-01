@@ -73,6 +73,14 @@ export async function getCommentsBySlug(slug: string) {
   return await postService.getCommentsBySlug(slug);
 }
 
+export async function getRecentComments(limit?: number) {
+  await getValidAdminSession();
+
+  const postService = new PostService();
+
+  return await postService.getRecentComments(limit);
+}
+
 export async function createComment(data: {
   postId: string;
   parentId?: string;
