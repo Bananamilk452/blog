@@ -1,4 +1,4 @@
-import { Activity, getActorHandle, Note, PUBLIC_COLLECTION } from "@fedify/fedify";
+import { Activity, Document, getActorHandle, Note, PUBLIC_COLLECTION } from "@fedify/fedify";
 import debug from "debug";
 
 import { uploadFile } from "./models/s3";
@@ -141,6 +141,23 @@ export function getTagFromNote(note: Note) {
     (tag): tag is { type: string; href: string; name: string } =>
       tag.type === "Mention" && typeof tag.href === "string" && typeof tag.name === "string",
   );
+}
+
+export async function formatNoteAttachments(note: Note) {
+  const formattedAttachments = [];
+
+  for await (const attachment of note.getAttachments()) {
+    if (attachment instanceof Document) {
+      formattedAttachments.push({
+        url: attachment.url?.toString() || "",
+        mediaType: attachment.mediaType,
+        sensitive: attachment.sensitive || false,
+        name: attachment.name?.toString(),
+      });
+    }
+  }
+
+  return formattedAttachments;
 }
 
 export function isUniqueConstraintError(error: unknown) {

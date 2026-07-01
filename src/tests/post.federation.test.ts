@@ -33,8 +33,8 @@ vi.mock("~/federation", () => ({
 }));
 
 vi.mock("~/lib/prisma", () => ({ prisma: mocks.prisma }));
-vi.mock("./s3", () => ({ uploadFile: vi.fn() }));
-vi.mock("../utils-federation", () => ({
+vi.mock("../lib/models/s3", () => ({ uploadFile: vi.fn() }));
+vi.mock("../lib/utils-federation", () => ({
   isPublic: (toIds: string[]) => toIds.includes("https://www.w3.org/ns/activitystreams#Public"),
   isNonList: () => false,
   isFollowersOnly: () => false,
@@ -44,7 +44,7 @@ vi.mock("isomorphic-dompurify", () => ({
   default: { sanitize: vi.fn((content: string) => content) },
 }));
 
-const postModel = await import("./post");
+const postModel = await import("../lib/models/post");
 
 function localMainActor() {
   return {

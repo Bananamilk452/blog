@@ -21,10 +21,10 @@ vi.mock("~/federation", () => ({
   },
 }));
 
-vi.mock("../prisma", () => ({ prisma: mocks.prisma }));
-vi.mock("./s3", () => ({ uploadFile: vi.fn() }));
+vi.mock("../lib/prisma", () => ({ prisma: mocks.prisma }));
+vi.mock("../lib/models/s3", () => ({ uploadFile: vi.fn() }));
 
-const actorModel = await import("./actor");
+const actorModel = await import("../lib/models/actor");
 
 describe("actor model federation publishing", () => {
   beforeEach(() => {

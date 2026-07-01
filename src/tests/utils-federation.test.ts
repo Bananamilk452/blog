@@ -1,8 +1,8 @@
-import { PUBLIC_COLLECTION } from "@fedify/fedify";
+import { Document, Note, PUBLIC_COLLECTION } from "@fedify/fedify";
 
-vi.mock("./models/s3", () => ({ uploadFile: vi.fn() }));
-vi.mock("./prisma", () => ({ prisma: {} }));
-vi.mock("./utils-server", () => ({ downloadFile: vi.fn() }));
+vi.mock("../lib/models/s3", () => ({ uploadFile: vi.fn() }));
+vi.mock("../lib/prisma", () => ({ prisma: {} }));
+vi.mock("../lib/utils-server", () => ({ downloadFile: vi.fn() }));
 
 import {
   getTagFromNote,
@@ -10,9 +10,8 @@ import {
   isNonList,
   isPublic,
   isUniqueConstraintError,
-} from "./utils-federation";
-
-import type { Note } from "@fedify/fedify";
+  formatNoteAttachments,
+} from "../lib/utils-federation";
 
 describe("utils-federation", () => {
   describe("visibility helpers", () => {
@@ -74,5 +73,28 @@ describe("utils-federation", () => {
     expect(isUniqueConstraintError({ code: "P2002" })).toBe(true);
     expect(isUniqueConstraintError({ code: "P2025" })).toBe(false);
     expect(isUniqueConstraintError(null)).toBe(false);
+  });
+
+  it("formats Document note attachments", async () => {
+    const note = new Note({});
+    vi.spyOn(note, "getAttachments").mockReturnValue(
+      (async function* () {
+        yield new Document({
+          url: new URL("https://remote.test/image.png"),
+          mediaType: "image/png",
+          sensitive: true,
+          name: "image",
+        });
+      })() as ReturnType<Note["getAttachments"]>,
+    );
+
+    await expect(formatNoteAttachments(note)).resolves.toEqual([
+      {
+        url: "https://remote.test/image.png",
+        mediaType: "image/png",
+        sensitive: true,
+        name: "image",
+      },
+    ]);
   });
 });
