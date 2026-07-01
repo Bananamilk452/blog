@@ -334,7 +334,10 @@ export async function getCategories() {
   return await prisma.category.findMany();
 }
 
-export async function getCommentsBySlug(slug: string) {
+export async function getCommentsBySlug(
+  slug: string,
+  options: { includeFollowersOnly?: boolean } = {},
+) {
   const { id: postId } = await prisma.posts.findUniqueOrThrow({
     where: { slug },
     select: { id: true },
@@ -349,7 +352,11 @@ export async function getCommentsBySlug(slug: string) {
   const commentsById = new Map<string, CommentWithReplies>();
   const topLevelComments: CommentWithReplies[] = [];
 
-  for (const comment of comments) {
+  const visibleComments = options.includeFollowersOnly
+    ? comments
+    : comments.filter((comment) => !isFollowersOnly(comment.to, comment.cc));
+
+  for (const comment of visibleComments) {
     commentsById.set(comment.id, { ...comment, replies: [] });
   }
 
