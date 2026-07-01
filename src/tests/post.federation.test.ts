@@ -1,4 +1,4 @@
-import { Article, Note } from "@fedify/fedify";
+import { Note } from "@fedify/fedify";
 
 const mocks = vi.hoisted(() => ({
   ctx: {
@@ -62,8 +62,8 @@ describe("post model federation publishing", () => {
     mocks.prisma.$transaction.mockImplementation(async (callback) => callback(mocks.prisma));
   });
 
-  it("loads an Article before deleting a published post and then sends Delete to followers", async () => {
-    const article = new Article({
+  it("loads a Note before deleting a published post and then sends Delete to followers", async () => {
+    const note = new Note({
       id: new URL("https://example.com/post/hello"),
       attribution: new URL("https://example.com/users/alice"),
     });
@@ -80,7 +80,7 @@ describe("post model federation publishing", () => {
     });
     mocks.ctx.getObject.mockImplementationOnce(async () => {
       calls.push("getObject");
-      return article;
+      return note;
     });
     mocks.prisma.posts.delete.mockImplementationOnce(async () => {
       calls.push("delete");

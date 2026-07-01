@@ -1,4 +1,4 @@
-import { Article, Document, PUBLIC_COLLECTION } from "@fedify/fedify";
+import { Document, Note, PUBLIC_COLLECTION } from "@fedify/fedify";
 import { Temporal } from "@js-temporal/polyfill";
 import { format } from "date-fns";
 
@@ -22,8 +22,8 @@ export async function dispatchPost(ctx: RequestContext<unknown>, values: { slug:
 
   const content = `<a href="${post.uri}">${post.title}</a> (작성자: ${post.user.name} - 마지막 수정 ${format(post.updatedAt, "yyyy/MM/dd")})<br />${post.content}`;
 
-  return new Article({
-    id: ctx.getObjectUri(Article, values),
+  return new Note({
+    id: ctx.getObjectUri(Note, values),
     attribution: ctx.getActorUri(post.actor.username),
     to: PUBLIC_COLLECTION,
     cc: ctx.getFollowersUri(post.actor.username),
@@ -32,7 +32,7 @@ export async function dispatchPost(ctx: RequestContext<unknown>, values: { slug:
     published: Temporal.Instant.from(
       post.publishedAt ? post.publishedAt.toISOString() : post.createdAt.toISOString(),
     ),
-    url: ctx.getObjectUri(Article, values),
+    url: ctx.getObjectUri(Note, values),
     attachments: post.banner
       ? [
           new Document({

@@ -1,4 +1,4 @@
-import { Article, Create } from "@fedify/fedify";
+import { Create, Note } from "@fedify/fedify";
 
 import { log } from "./log";
 import { prisma } from "~/lib/prisma";
@@ -26,15 +26,15 @@ export async function dispatchOutbox(ctx: RequestContext<unknown>, identifier: s
       posts.map(async (post) => {
         if (post.slug == null) return null;
 
-        const article = await ctx.getObject(Article, { slug: post.slug });
-        if (!article) return null;
+        const note = await ctx.getObject(Note, { slug: post.slug });
+        if (!note) return null;
 
         return new Create({
-          id: new URL("#activity", article.id ?? undefined),
-          actors: article.attributionIds,
-          tos: article.toIds,
-          ccs: article.ccIds,
-          object: article,
+          id: new URL("#activity", note.id ?? undefined),
+          actors: note.attributionIds,
+          tos: note.toIds,
+          ccs: note.ccIds,
+          object: note,
         });
       }),
     )

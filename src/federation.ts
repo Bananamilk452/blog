@@ -1,13 +1,13 @@
-import { Article, Create, Delete, Follow, Undo, Update, createFederation } from "@fedify/fedify";
+import { Create, Delete, Follow, Note, Undo, Update, createFederation } from "@fedify/fedify";
 import { RedisKvStore, RedisMessageQueue } from "@fedify/redis";
 import { Redis } from "ioredis";
 
 import { countFollowers } from "./federation/countFollowers";
 import { countOutboxItems } from "./federation/countOutboxItems";
 import { dispatchActor } from "./federation/dispatchActor";
-import { dispatchArticle } from "./federation/dispatchArticle";
 import { dispatchFollowers } from "./federation/dispatchFollowers";
 import { dispatchKeyPairs } from "./federation/dispatchKeyPairs";
+import { dispatchNote } from "./federation/dispatchNote";
 import { dispatchOutbox } from "./federation/dispatchOutbox";
 import { handleCreate } from "./federation/handleCreate";
 import { handleDelete } from "./federation/handleDelete";
@@ -47,6 +47,6 @@ federation
   .setFollowersDispatcher("/users/{identifier}/followers", dispatchFollowers)
   .setCounter(countFollowers);
 
-federation.setObjectDispatcher(Article, "/post/{slug}", dispatchArticle);
+federation.setObjectDispatcher(Note, "/post/{slug}", dispatchNote);
 
 export { federation };

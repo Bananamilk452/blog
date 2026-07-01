@@ -1,4 +1,4 @@
-import { Article, PUBLIC_COLLECTION } from "@fedify/fedify";
+import { Note, PUBLIC_COLLECTION } from "@fedify/fedify";
 
 import { createCtx, mocks } from "./federation.helpers";
 
@@ -11,13 +11,13 @@ describe("dispatchOutbox", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("dispatches published posts as outbox Create activities", async () => {
-    const article = new Article({
+    const note = new Note({
       id: new URL("https://example.com/post/hello"),
       attribution: new URL("https://example.com/users/alice"),
       tos: [PUBLIC_COLLECTION],
       ccs: [new URL("https://example.com/users/alice/followers")],
     });
-    const ctx = createCtx(article);
+    const ctx = createCtx(note);
     mocks.prisma.posts.findMany.mockResolvedValueOnce([{ slug: "hello" }]);
 
     const result = await dispatchOutbox(ctx, "alice");
@@ -31,7 +31,7 @@ describe("dispatchOutbox", () => {
       orderBy: { publishedAt: "desc" },
       select: { slug: true },
     });
-    expect(ctx.getObject).toHaveBeenCalledWith(Article, { slug: "hello" });
+    expect(ctx.getObject).toHaveBeenCalledWith(Note, { slug: "hello" });
     expect(result.items).toHaveLength(1);
     expect(result.items[0]!.objectId?.href).toBe("https://example.com/post/hello");
   });
