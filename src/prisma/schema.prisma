@@ -67,6 +67,26 @@ model Follows {
   @@map("follows")
 }
 
+model InboxActivityLog {
+  id           String    @id @default(uuid(7))
+  activityId   String?
+  activityType String
+  actorUri     String?
+  objectId     String?
+  rawJson      Json
+  status       String
+  errorMessage String?
+  receivedAt   DateTime  @default(now())
+  handledAt    DateTime?
+
+  @@index([activityId])
+  @@index([activityType])
+  @@index([actorUri])
+  @@index([status])
+  @@index([receivedAt])
+  @@map("inbox_activity_log")
+}
+
 model Posts {
   id          String    @id @default(uuid(7))
   uri         String    @unique

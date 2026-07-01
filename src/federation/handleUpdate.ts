@@ -4,16 +4,20 @@ import { log } from "./log";
 import { prisma } from "~/lib/prisma";
 import { formatNoteAttachments, getTagFromNote, upsertActor } from "~/lib/utils-federation";
 
+import type { InboxActivityStatus } from "./logInboxActivity";
 import type { InboxContext, Update } from "@fedify/fedify";
 
-export async function handleUpdate(_ctx: InboxContext<unknown>, update: Update) {
+export async function handleUpdate(
+  _ctx: InboxContext<unknown>,
+  update: Update,
+): Promise<InboxActivityStatus> {
   log(`Received Update activity: ${update.id?.href}`);
 
   const object = await update.getObject();
-  if (!object) return;
+  if (!object) return "ignored";
 
   if (object instanceof Note) {
-    if (object.id == null) return;
+    if (object.id == null) return "ignored";
 
     const comment = await prisma.comment.findFirst({
       where: { uri: object.id.href },
@@ -22,14 +26,14 @@ export async function handleUpdate(_ctx: InboxContext<unknown>, update: Update) 
 
     if (!comment) {
       log(`Comment not found for update: ${object.id.href}`);
-      return;
+      return "ignored";
     }
 
     if (update.actorId?.href !== comment.actor.uri) {
       log(
         `Unauthorized update attempt. Request actor: ${update.actorId?.href}, Comment actor: ${comment.actor.uri}`,
       );
-      return;
+      return "ignored";
     }
 
     await prisma.comment.update({
@@ -48,16 +52,19 @@ export async function handleUpdate(_ctx: InboxContext<unknown>, update: Update) 
     });
 
     log(`Updated comment: ${comment.id}`);
-    return;
+    return "handled";
   }
 
   if (isActor(object)) {
     if (update.actorId?.href !== object.id?.href) {
       log("Unauthorized actor update attempt: Actor can only update themselves");
-      return;
+      return "ignored";
     }
 
     await upsertActor(object);
     log(`Updated actor profile: ${object.id?.href}`);
+    return "handled";
   }
+
+  return "ignored";
 }

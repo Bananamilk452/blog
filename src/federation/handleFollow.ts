@@ -4,26 +4,30 @@ import { log } from "./log";
 import { prisma } from "~/lib/prisma";
 import { isUniqueConstraintError, upsertActor } from "~/lib/utils-federation";
 
+import type { InboxActivityStatus } from "./logInboxActivity";
 import type { Follow, InboxContext } from "@fedify/fedify";
 
-export async function handleFollow(ctx: InboxContext<unknown>, follow: Follow) {
+export async function handleFollow(
+  ctx: InboxContext<unknown>,
+  follow: Follow,
+): Promise<InboxActivityStatus> {
   log(`Received Follow activity: ${follow.id?.href}`);
 
   if (follow.objectId == null) {
     log("The Follow object does not have an object:", follow);
-    return;
+    return "ignored";
   }
 
   const object = ctx.parseUri(follow.objectId);
   if (object == null || object.type !== "actor") {
     log("The Follow object's object is not an actor:", follow);
-    return;
+    return "ignored";
   }
 
   const follower = await follow.getActor();
   if (follower?.id == null || follower.inboxId == null) {
     log("The Follow object does not have an actor:", follow);
-    return;
+    return "ignored";
   }
 
   log(
@@ -42,7 +46,7 @@ export async function handleFollow(ctx: InboxContext<unknown>, follow: Follow) {
 
   if (followingId == null) {
     log("Failed to find the actor to follow in the database:", object);
-    return;
+    return "ignored";
   }
 
   const followerId = (await upsertActor(follower)).id;
@@ -57,7 +61,7 @@ export async function handleFollow(ctx: InboxContext<unknown>, follow: Follow) {
   } catch (error) {
     if (!isUniqueConstraintError(error)) {
       log("Error creating follow relationship:", error);
-      return;
+      throw error;
     }
 
     log("Follow relationship already exists; accepting again:", error);
@@ -73,4 +77,6 @@ export async function handleFollow(ctx: InboxContext<unknown>, follow: Follow) {
     }),
     { immediate: true },
   );
+
+  return "handled";
 }

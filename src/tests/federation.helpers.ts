@@ -9,6 +9,7 @@ vi.hoisted(() => {
       actor: { findFirst: vi.fn() },
       keys: { upsert: vi.fn() },
       follows: { create: vi.fn(), deleteMany: vi.fn(), findMany: vi.fn(), count: vi.fn() },
+      inboxActivityLog: { create: vi.fn(), update: vi.fn(), findMany: vi.fn(), count: vi.fn() },
       posts: { count: vi.fn(), findFirst: vi.fn(), findMany: vi.fn() },
       comment: { create: vi.fn(), delete: vi.fn(), findFirst: vi.fn(), update: vi.fn() },
     },
@@ -24,6 +25,12 @@ type FederationTestMocks = {
     follows: {
       create: ReturnType<typeof vi.fn>;
       deleteMany: ReturnType<typeof vi.fn>;
+      findMany: ReturnType<typeof vi.fn>;
+      count: ReturnType<typeof vi.fn>;
+    };
+    inboxActivityLog: {
+      create: ReturnType<typeof vi.fn>;
+      update: ReturnType<typeof vi.fn>;
       findMany: ReturnType<typeof vi.fn>;
       count: ReturnType<typeof vi.fn>;
     };
