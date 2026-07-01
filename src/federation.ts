@@ -14,6 +14,7 @@ import { handleDelete } from "./federation/handleDelete";
 import { handleFollow } from "./federation/handleFollow";
 import { handleUndo } from "./federation/handleUndo";
 import { handleUpdate } from "./federation/handleUpdate";
+import { logInboxActivity } from "./federation/logInboxActivity";
 
 const redisUrl = process.env.REDIS_URL;
 
@@ -37,11 +38,11 @@ federation
 
 federation
   .setInboxListeners("/users/{identifier}/inbox", "/inbox")
-  .on(Follow, handleFollow)
-  .on(Undo, handleUndo)
-  .on(Create, handleCreate)
-  .on(Delete, handleDelete)
-  .on(Update, handleUpdate);
+  .on(Follow, logInboxActivity(handleFollow))
+  .on(Undo, logInboxActivity(handleUndo))
+  .on(Create, logInboxActivity(handleCreate))
+  .on(Delete, logInboxActivity(handleDelete))
+  .on(Update, logInboxActivity(handleUpdate));
 
 federation
   .setFollowersDispatcher("/users/{identifier}/followers", dispatchFollowers)

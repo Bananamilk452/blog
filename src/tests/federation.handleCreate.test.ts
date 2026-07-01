@@ -112,6 +112,6 @@ describe("handleCreate", () => {
         actorId: author.id,
         getObject: vi.fn(async () => note),
       } as Pick<Create, "actorId" | "getObject"> as Create),
-    ).resolves.toBeUndefined();
+    ).resolves.toBe("ignored");
   });
 });

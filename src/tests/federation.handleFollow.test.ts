@@ -45,7 +45,7 @@ describe("handleFollow", () => {
     expect(ctx.sendActivity).toHaveBeenCalledTimes(1);
   });
 
-  it("does not accept Follow activities when persistence fails for a non-unique error", async () => {
+  it("throws when Follow persistence fails for a non-unique error", async () => {
     const ctx = createCtx();
     const follower = createRemoteActor();
     const follow = new Follow({
@@ -57,7 +57,7 @@ describe("handleFollow", () => {
     mocks.upsertActor.mockResolvedValueOnce({ id: "remote-actor" });
     mocks.prisma.follows.create.mockRejectedValueOnce(new Error("db down"));
 
-    await handleFollow(ctx, follow);
+    await expect(handleFollow(ctx, follow)).rejects.toThrow("db down");
 
     expect(ctx.sendActivity).not.toHaveBeenCalled();
   });
