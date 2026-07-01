@@ -5,7 +5,7 @@ const mocks = vi.hoisted(() => ({
     actor: { findFirst: vi.fn() },
     keys: { upsert: vi.fn() },
     follows: { create: vi.fn(), deleteMany: vi.fn(), findMany: vi.fn(), count: vi.fn() },
-    posts: { findFirst: vi.fn() },
+    posts: { count: vi.fn(), findFirst: vi.fn(), findMany: vi.fn() },
     comment: { create: vi.fn(), delete: vi.fn(), findFirst: vi.fn(), update: vi.fn() },
   },
   upsertActor: vi.fn(),
@@ -43,6 +43,7 @@ function createCtx() {
       (_type: unknown, values: { slug: string }) =>
         new URL(`/post/${values.slug}`, "https://example.com"),
     ),
+    getObject: vi.fn(),
     getOutboxUri: vi.fn(
       (identifier: string) => new URL(`/users/${identifier}/outbox`, "https://example.com"),
     ),
@@ -338,6 +339,46 @@ describe("followers and object dispatchers", () => {
     mocks.prisma.follows.count.mockResolvedValueOnce(3);
 
     await expect(federationModule.countFollowers(createCtx(), "alice")).resolves.toBe(3);
+  });
+
+  it("dispatches published posts as outbox Create activities", async () => {
+    const ctx = createCtx();
+    const note = new Note({
+      id: new URL("https://example.com/post/hello"),
+      attribution: new URL("https://example.com/users/alice"),
+      tos: [PUBLIC_COLLECTION],
+      ccs: [new URL("https://example.com/users/alice/followers")],
+    });
+    mocks.prisma.posts.findMany.mockResolvedValueOnce([{ slug: "hello" }]);
+    ctx.getObject = vi.fn(async () => note);
+
+    const result = await federationModule.dispatchOutbox(ctx, "alice");
+
+    expect(mocks.prisma.posts.findMany).toHaveBeenCalledWith({
+      where: {
+        state: "published",
+        slug: { not: null },
+        actor: { username: "alice", userId: { not: null } },
+      },
+      orderBy: { publishedAt: "desc" },
+      select: { slug: true },
+    });
+    expect(ctx.getObject).toHaveBeenCalledWith(Note, { slug: "hello" });
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]!.objectId?.href).toBe("https://example.com/post/hello");
+  });
+
+  it("counts published outbox items", async () => {
+    mocks.prisma.posts.count.mockResolvedValueOnce(2);
+
+    await expect(federationModule.countOutboxItems(createCtx(), "alice")).resolves.toBe(2);
+    expect(mocks.prisma.posts.count).toHaveBeenCalledWith({
+      where: {
+        state: "published",
+        slug: { not: null },
+        actor: { username: "alice", userId: { not: null } },
+      },
+    });
   });
 
   it("dispatches a public blog post Note", async () => {

@@ -1,5 +1,7 @@
 import {
   Accept,
+  ActorKeyPair,
+  Context,
   Create,
   createFederation,
   Delete,
@@ -10,12 +12,14 @@ import {
   generateCryptoKeyPair,
   Image,
   importJwk,
+  InboxContext,
   isActor,
   Mention,
   Note,
   Person,
   PUBLIC_COLLECTION,
   Recipient,
+  RequestContext,
   Undo,
   Update,
 } from "@fedify/fedify";
@@ -43,7 +47,7 @@ const federation = createFederation({
   origin: new URL(process.env.PUBLIC_URL!).origin,
 });
 
-export async function dispatchActor(ctx: any, identifier: string) {
+export async function dispatchActor(ctx: RequestContext<unknown>, identifier: string) {
   log(`Dispatching actor for identifier: ${identifier}`);
 
   const actor = await prisma.actor.findFirst({
@@ -69,7 +73,7 @@ export async function dispatchActor(ctx: any, identifier: string) {
       : undefined,
     url: new URL(actor.uri),
     publicKey: keys[0]?.cryptographicKey,
-    assertionMethods: keys.map((k: any) => k.multikey),
+    assertionMethods: keys.map((k: ActorKeyPair) => k.multikey),
     followers: ctx.getFollowersUri(identifier),
     icon: new Image({
       url: actor.avatar?.url ? new URL(actor.avatar?.url) : undefined,
@@ -80,7 +84,7 @@ export async function dispatchActor(ctx: any, identifier: string) {
   });
 }
 
-export async function dispatchKeyPairs(_ctx: any, identifier: string) {
+export async function dispatchKeyPairs(_ctx: Context<unknown>, identifier: string) {
   log(`Dispatching key pairs for identifier: ${identifier}`);
 
   const actor = await prisma.actor.findFirst({
@@ -127,7 +131,7 @@ export async function dispatchKeyPairs(_ctx: any, identifier: string) {
   return pairs;
 }
 
-export async function handleFollow(ctx: any, follow: Follow) {
+export async function handleFollow(ctx: InboxContext<unknown>, follow: Follow) {
   log(`Received Follow activity: ${follow.id?.href}`);
 
   if (follow.objectId == null) {
@@ -192,7 +196,7 @@ export async function handleFollow(ctx: any, follow: Follow) {
   );
 }
 
-export async function handleUndo(ctx: any, undo: Undo) {
+export async function handleUndo(ctx: InboxContext<unknown>, undo: Undo) {
   log(`Received Undo activity: ${undo.id?.href}`);
 
   const object = await undo.getObject();
@@ -243,7 +247,7 @@ async function formatNoteAttachments(note: Note) {
   return formattedAttachments;
 }
 
-export async function handleCreate(ctx: any, create: Create) {
+export async function handleCreate(ctx: InboxContext<unknown>, create: Create) {
   try {
     log(`Received Create activity: ${create.id?.href}`);
 
@@ -303,7 +307,7 @@ export async function handleCreate(ctx: any, create: Create) {
   }
 }
 
-export async function handleDelete(_ctx: any, del: Delete) {
+export async function handleDelete(_ctx: InboxContext<unknown>, del: Delete) {
   log(`Received Delete activity: ${del.id?.href}`);
 
   const objectId = del.objectId;
@@ -333,7 +337,7 @@ export async function handleDelete(_ctx: any, del: Delete) {
   log(`Deleted comment: ${comment.id}`);
 }
 
-export async function handleUpdate(_ctx: any, update: Update) {
+export async function handleUpdate(_ctx: InboxContext<unknown>, update: Update) {
   log(`Received Update activity: ${update.id?.href}`);
 
   const object = await update.getObject();
@@ -389,7 +393,7 @@ export async function handleUpdate(_ctx: any, update: Update) {
   }
 }
 
-export async function dispatchFollowers(_ctx: any, identifier: string) {
+export async function dispatchFollowers(_ctx: Context<unknown>, identifier: string) {
   log(`Dispatching followers for identifier: ${identifier}`);
 
   const followers = await prisma.follows.findMany({
@@ -420,7 +424,7 @@ export async function dispatchFollowers(_ctx: any, identifier: string) {
   return { items };
 }
 
-export async function countFollowers(_ctx: any, identifier: string) {
+export async function countFollowers(_ctx: RequestContext<unknown>, identifier: string) {
   log(`Counting followers for identifier: ${identifier}`);
 
   return await prisma.follows.count({
@@ -434,7 +438,60 @@ export async function countFollowers(_ctx: any, identifier: string) {
   });
 }
 
-export async function dispatchNote(ctx: any, values: { slug: string }) {
+export async function dispatchOutbox(ctx: RequestContext<unknown>, identifier: string) {
+  log(`Dispatching outbox for identifier: ${identifier}`);
+
+  const posts = await prisma.posts.findMany({
+    where: {
+      state: "published",
+      slug: { not: null },
+      actor: {
+        username: identifier,
+        userId: { not: null },
+      },
+    },
+    orderBy: { publishedAt: "desc" },
+    select: { slug: true },
+  });
+
+  const items = (
+    await Promise.all(
+      posts.map(async (post) => {
+        if (post.slug == null) return null;
+
+        const note = await ctx.getObject(Note, { slug: post.slug });
+        if (!note) return null;
+
+        return new Create({
+          id: new URL("#activity", note.id ?? undefined),
+          actors: note.attributionIds,
+          tos: note.toIds,
+          ccs: note.ccIds,
+          object: note,
+        });
+      }),
+    )
+  ).filter((item) => item != null);
+
+  return { items };
+}
+
+export async function countOutboxItems(_ctx: RequestContext<unknown>, identifier: string) {
+  log(`Counting outbox items for identifier: ${identifier}`);
+
+  return await prisma.posts.count({
+    where: {
+      state: "published",
+      slug: { not: null },
+      actor: {
+        username: identifier,
+        userId: { not: null },
+      },
+    },
+  });
+}
+
+export async function dispatchNote(ctx: RequestContext<unknown>, values: { slug: string }) {
   log(`Dispatching Note object for slug: ${values.slug}`);
 
   const uuidPattern = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -526,6 +583,10 @@ export async function dispatchNote(ctx: any, values: { slug: string }) {
 federation
   .setActorDispatcher("/users/{identifier}", dispatchActor)
   .setKeyPairsDispatcher(dispatchKeyPairs);
+
+federation
+  .setOutboxDispatcher("/users/{identifier}/outbox", dispatchOutbox)
+  .setCounter(countOutboxItems);
 
 federation
   .setInboxListeners("/users/{identifier}/inbox", "/inbox")
