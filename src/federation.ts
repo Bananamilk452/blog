@@ -1,5 +1,6 @@
 import {
   Accept,
+  Article,
   ActorKeyPair,
   Context,
   Create,
@@ -459,15 +460,15 @@ export async function dispatchOutbox(ctx: RequestContext<unknown>, identifier: s
       posts.map(async (post) => {
         if (post.slug == null) return null;
 
-        const note = await ctx.getObject(Note, { slug: post.slug });
-        if (!note) return null;
+        const article = await ctx.getObject(Article, { slug: post.slug });
+        if (!article) return null;
 
         return new Create({
-          id: new URL("#activity", note.id ?? undefined),
-          actors: note.attributionIds,
-          tos: note.toIds,
-          ccs: note.ccIds,
-          object: note,
+          id: new URL("#activity", article.id ?? undefined),
+          actors: article.attributionIds,
+          tos: article.toIds,
+          ccs: article.ccIds,
+          object: article,
         });
       }),
     )
@@ -491,13 +492,13 @@ export async function countOutboxItems(_ctx: RequestContext<unknown>, identifier
   });
 }
 
-export async function dispatchNote(ctx: RequestContext<unknown>, values: { slug: string }) {
-  log(`Dispatching Note object for slug: ${values.slug}`);
+export async function dispatchArticle(ctx: RequestContext<unknown>, values: { slug: string }) {
+  log(`Dispatching Article object for slug: ${values.slug}`);
 
   const uuidPattern = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const isComment = uuidPattern.test(values.slug);
   if (isComment) {
-    const commentUri = ctx.getObjectUri(Note, values).href;
+    const commentUri = ctx.getObjectUri(Article, values).href;
     const comment = await prisma.comment.findFirst({
       where: { uri: commentUri },
       include: {
@@ -559,8 +560,8 @@ export async function dispatchNote(ctx: RequestContext<unknown>, values: { slug:
 
   const content = `<a href="${post.uri}">${post.title}</a> (작성자: ${post.user.name} - 마지막 수정 ${format(post.updatedAt, "yyyy/MM/dd")})<br />${post.content}`;
 
-  return new Note({
-    id: ctx.getObjectUri(Note, values),
+  return new Article({
+    id: ctx.getObjectUri(Article, values),
     attribution: ctx.getActorUri(post.actor.username),
     to: PUBLIC_COLLECTION,
     cc: ctx.getFollowersUri(post.actor.username),
@@ -569,7 +570,7 @@ export async function dispatchNote(ctx: RequestContext<unknown>, values: { slug:
     published: Temporal.Instant.from(
       post.publishedAt ? post.publishedAt.toISOString() : post.createdAt.toISOString(),
     ),
-    url: ctx.getObjectUri(Note, values),
+    url: ctx.getObjectUri(Article, values),
     attachments: post.banner
       ? [
           new Document({
@@ -951,102 +952,5 @@ federation
     return result;
   });
 
-federation.setObjectDispatcher(Note, "/post/{slug}", async (ctx, values) => {
-  log(`Dispatching Note object for slug: ${values.slug}`);
-
-  // Check if slug contains UUID pattern (comment vs post)
-  // Comment slug format: postSlug-uuid
-  // UUID pattern: 8-4-4-4-12 hex digits
-  const uuidPattern = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  const isComment = uuidPattern.test(values.slug);
-  if (isComment) {
-    // Handle comment
-    log(`Detected comment slug: ${values.slug}`);
-
-    const commentUri = ctx.getObjectUri(Note, values).href;
-    const comment = await prisma.comment.findFirst({
-      where: { uri: commentUri },
-      include: {
-        actor: true,
-        attachment: true,
-        post: true,
-        parent: {
-          select: {
-            uri: true,
-          },
-        },
-      },
-    });
-
-    if (!comment) {
-      log(`Comment not found for URI: ${commentUri}`);
-      return null;
-    }
-
-    const toRecipients = comment.to.map((uri) => new URL(uri));
-    const ccRecipients = comment.cc.map((uri) => new URL(uri));
-
-    return new Note({
-      id: new URL(comment.uri),
-      attribution: new URL(comment.actor.uri),
-      tos: toRecipients,
-      ccs: ccRecipients,
-      tags: (comment.mentions as { href: string; name: string }[]).map(
-        (mention) =>
-          new Mention({
-            id: new URL(mention.href),
-            name: mention.name,
-          }),
-      ),
-      content: comment.content,
-      mediaType: "text/html",
-      replyTarget: comment.parent ? new URL(comment.parent.uri) : new URL(comment.post.uri),
-      attachments: comment.attachment.map(
-        (att) =>
-          new Document({
-            url: new URL(att.url),
-            mediaType: att.mediaType ?? undefined,
-          }),
-      ),
-      published: Temporal.Instant.from(comment.createdAt.toISOString()),
-      url: new URL(comment.url ?? comment.uri),
-    });
-  } else {
-    // Handle post (existing logic)
-    const post = await prisma.posts.findFirst({
-      where: {
-        slug: values.slug,
-      },
-      include: {
-        user: true,
-        banner: true,
-        actor: true,
-      },
-    });
-
-    if (!post) return null;
-
-    const content = `<a href="${post.uri}">${post.title}</a> (작성자: ${post.user.name} - 마지막 수정 ${format(post.updatedAt, "yyyy/MM/dd")})<br />${post.content}`;
-
-    return new Note({
-      id: ctx.getObjectUri(Note, values),
-      attribution: ctx.getActorUri(post.actor.username),
-      to: PUBLIC_COLLECTION,
-      cc: ctx.getFollowersUri(post.actor.username),
-      content,
-      mediaType: "text/html",
-      published: Temporal.Instant.from(
-        post.publishedAt ? post.publishedAt.toISOString() : post.createdAt.toISOString(),
-      ),
-      url: ctx.getObjectUri(Note, values),
-      attachments: post.banner
-        ? [
-            new Document({
-              url: new URL(post.banner.url),
-            }),
-          ]
-        : undefined,
-    });
-  }
-});
+federation.setObjectDispatcher(Article, "/post/{slug}", dispatchArticle);
 export { federation };

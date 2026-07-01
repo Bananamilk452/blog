@@ -1,5 +1,6 @@
 import {
   Actor,
+  Article,
   Create,
   Delete,
   Document,
@@ -96,7 +97,7 @@ export async function createPost(
       },
     });
 
-    const url = ctx.getObjectUri(Note, {
+    const url = ctx.getObjectUri(Article, {
       slug: data.slug!,
     }).href;
 
@@ -110,7 +111,7 @@ export async function createPost(
 
   if (post.state === "published") {
     const noteArgs = { slug: data.slug! };
-    const note = await ctx.getObject(Note, noteArgs);
+    const note = await ctx.getObject(Article, noteArgs);
     await ctx.sendActivity(
       { identifier: username },
       "followers",
@@ -199,7 +200,7 @@ export async function updatePost(
 
   if (post.state === "published") {
     const noteArgs = { slug: data.slug! };
-    const note = await ctx.getObject(Note, noteArgs);
+    const note = await ctx.getObject(Article, noteArgs);
     await ctx.sendActivity(
       { identifier: username },
       "followers",
@@ -228,7 +229,8 @@ export async function deletePost(postId: string) {
   const username = mainActor.actor.username;
 
   const post = await prisma.posts.findUniqueOrThrow({ where: { id: postId } });
-  const note = post.state === "published" ? await ctx.getObject(Note, { slug: post.slug! }) : null;
+  const note =
+    post.state === "published" ? await ctx.getObject(Article, { slug: post.slug! }) : null;
 
   const deletedPost = await prisma.posts.delete({ where: { id: postId } });
 
@@ -536,10 +538,10 @@ export async function createComment(
   // Send ActivityPub Create activity to followers
   try {
     const noteArgs = { slug: comment.uri.split("/post/")[1] };
-    const note = await ctx.getObject(Note, noteArgs);
+    const note = await ctx.getObject(Article, noteArgs);
 
     if (!note) {
-      throw new Error("Failed to retrieve Note object for the post");
+      throw new Error("Failed to retrieve ActivityPub object for the comment");
     }
 
     const directRecipientMap = new Map<string, Actor | Recipient>();

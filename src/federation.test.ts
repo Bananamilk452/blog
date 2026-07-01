@@ -1,4 +1,4 @@
-import { Document, Follow, Note, Person, PUBLIC_COLLECTION } from "@fedify/fedify";
+import { Article, Document, Follow, Note, Person, PUBLIC_COLLECTION } from "@fedify/fedify";
 
 import type {
   Context,
@@ -359,13 +359,13 @@ describe("followers and object dispatchers", () => {
   });
 
   it("dispatches published posts as outbox Create activities", async () => {
-    const note = new Note({
+    const article = new Article({
       id: new URL("https://example.com/post/hello"),
       attribution: new URL("https://example.com/users/alice"),
       tos: [PUBLIC_COLLECTION],
       ccs: [new URL("https://example.com/users/alice/followers")],
     });
-    const ctx = createCtx(note);
+    const ctx = createCtx(article);
     mocks.prisma.posts.findMany.mockResolvedValueOnce([{ slug: "hello" }]);
 
     const result = await federationModule.dispatchOutbox(ctx, "alice");
@@ -379,7 +379,7 @@ describe("followers and object dispatchers", () => {
       orderBy: { publishedAt: "desc" },
       select: { slug: true },
     });
-    expect(ctx.getObject).toHaveBeenCalledWith(Note, { slug: "hello" });
+    expect(ctx.getObject).toHaveBeenCalledWith(Article, { slug: "hello" });
     expect(result.items).toHaveLength(1);
     expect(result.items[0]!.objectId?.href).toBe("https://example.com/post/hello");
   });
@@ -397,7 +397,7 @@ describe("followers and object dispatchers", () => {
     });
   });
 
-  it("dispatches a public blog post Note", async () => {
+  it("dispatches a public blog post Article", async () => {
     const date = new Date("2026-01-02T00:00:00.000Z");
     mocks.prisma.posts.findFirst.mockResolvedValueOnce({
       uri: "https://example.com/post/hello",
@@ -411,11 +411,12 @@ describe("followers and object dispatchers", () => {
       banner: { url: "https://example.com/banner.png" },
     });
 
-    const note = await federationModule.dispatchNote(createCtx(), { slug: "hello" });
+    const article = await federationModule.dispatchArticle(createCtx(), { slug: "hello" });
 
-    expect(note?.id?.href).toBe("https://example.com/post/hello");
-    expect(note?.toIds.map((url) => url.href)).toContain(PUBLIC_COLLECTION.href);
-    expect(note?.ccIds.map((url) => url.href)).toContain(
+    expect(article).toBeInstanceOf(Article);
+    expect(article?.id?.href).toBe("https://example.com/post/hello");
+    expect(article?.toIds.map((url) => url.href)).toContain(PUBLIC_COLLECTION.href);
+    expect(article?.ccIds.map((url) => url.href)).toContain(
       "https://example.com/users/alice/followers",
     );
   });
