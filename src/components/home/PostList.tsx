@@ -107,6 +107,9 @@ export function PostCard({
           </p>
         )}
         <h3 className="text-xl font-bold">{post.title}</h3>
+        <p className="text-sm">
+          {post.category?.name} - {post.user.name} (@{post.user.username})
+        </p>
         {excerpt && <p className="m-0 text-[#655648]">{excerpt}</p>}
       </div>
     </Link>

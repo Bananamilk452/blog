@@ -1,3 +1,7 @@
-.bn-default-styles p {
+.bn-default-styles p,
+.bn-default-styles h1,
+.bn-default-styles h2,
+.bn-default-styles h3,
+.bn-default-styles h4 {
   color: var(--ink);
 }
