@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
     },
     comment: {
       create: vi.fn(),
+      findMany: vi.fn(),
       findUnique: vi.fn(),
       update: vi.fn(),
     },
@@ -140,4 +141,88 @@ describe("post model federation publishing", () => {
       expect.anything(),
     );
   });
+
+  it("returns only top-level comments with deeply nested replies", async () => {
+    const topLevel = comment({ id: "comment-1", parentId: null });
+    const reply = comment({ id: "comment-2", parentId: "comment-1" });
+    const nestedReply = comment({ id: "comment-3", parentId: "comment-2" });
+    const deeplyNestedReply = comment({ id: "comment-4", parentId: "comment-3" });
+
+    mocks.prisma.posts.findUniqueOrThrow.mockResolvedValueOnce({ id: "post-1" });
+    mocks.prisma.comment.findMany.mockResolvedValueOnce([
+      topLevel,
+      reply,
+      nestedReply,
+      deeplyNestedReply,
+    ]);
+
+    const comments = await postModel.getCommentsBySlug("hello");
+
+    expect(mocks.prisma.comment.findMany).toHaveBeenCalledWith({
+      where: { postId: "post-1" },
+      include: {
+        attachment: true,
+        actor: {
+          include: {
+            avatar: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "asc" },
+    });
+    expect(comments).toHaveLength(1);
+    expect(comments[0].id).toBe("comment-1");
+    expect(comments[0].replies[0].id).toBe("comment-2");
+    expect(comments[0].replies[0].replies[0].id).toBe("comment-3");
+    expect(comments[0].replies[0].replies[0].replies[0].id).toBe("comment-4");
+  });
+
+  it("returns orphan replies as top-level comments", async () => {
+    const topLevel = comment({ id: "comment-1", parentId: null });
+    const orphan = comment({ id: "comment-2", parentId: "missing-comment" });
+
+    mocks.prisma.posts.findUniqueOrThrow.mockResolvedValueOnce({ id: "post-1" });
+    mocks.prisma.comment.findMany.mockResolvedValueOnce([topLevel, orphan]);
+
+    const comments = await postModel.getCommentsBySlug("hello");
+
+    expect(comments.map((comment) => comment.id)).toEqual(["comment-1", "comment-2"]);
+    expect(comments[1].parentId).toBe("missing-comment");
+    expect(comments[1].replies).toEqual([]);
+  });
 });
+
+function comment({ id, parentId }: { id: string; parentId: string | null }) {
+  return {
+    id,
+    uri: `https://example.com/post/${id}`,
+    actorId: "actor-1",
+    actor: {
+      id: "actor-1",
+      uri: "https://example.com/users/alice",
+      username: "alice",
+      handle: "@alice@example.com",
+      name: "Alice",
+      inboxUrl: "https://example.com/users/alice/inbox",
+      sharedInboxUrl: null,
+      url: "https://example.com/users/alice",
+      createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+      userId: null,
+      summary: null,
+      avatarId: null,
+      bannerId: null,
+      avatar: null,
+    },
+    postId: "post-1",
+    parentId,
+    content: id,
+    url: `https://example.com/post/${id}`,
+    to: [],
+    cc: [],
+    mentions: [],
+    attachment: [],
+    createdAt: new Date("2026-01-01T00:00:00.000Z"),
+    updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+  };
+}

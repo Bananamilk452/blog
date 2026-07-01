@@ -13,21 +13,20 @@ import { Button } from "~/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "~/components/ui/form";
 import { Textarea } from "~/components/ui/textarea";
 import { useCreateComment } from "~/hooks/useCreateComment";
+import { useSession } from "~/hooks/useSession";
 import { getCommentsBySlug } from "~/lib/actions/post";
 import { CreateCommentForm, CreateCommentFormSchema } from "~/types/zod/CreateCommentFormSchema";
 
 type CommentWithActor = Awaited<ReturnType<typeof getCommentsBySlug>>[number];
 
 export function PostComments({ comments, slug }: { comments: CommentWithActor[]; slug: string }) {
-  const topLevelComments = comments.filter((comment) => !comment.parentId);
-
   if (comments.length === 0) {
     return <p className="muted py-8 text-center">아직 댓글이 없습니다.</p>;
   }
 
   return (
     <div className="flex flex-col gap-6">
-      {topLevelComments.map((comment) => (
+      {comments.map((comment) => (
         <CommentItem key={comment.id} comment={comment} slug={slug} />
       ))}
     </div>
@@ -41,6 +40,8 @@ function CommentItem({
   comment: CommentWithActor | CommentWithActor["replies"][number];
   slug: string;
 }) {
+  const { data: session } = useSession();
+
   const [showReplyEditor, setShowReplyEditor] = useState(false);
 
   const content = DOMPurify.sanitize(comment.content);
@@ -105,11 +106,13 @@ function CommentItem({
             })}
         </div>
 
-        <div className="mt-2 flex items-center gap-4">
-          <ReplyButton comment={comment} onToggle={() => setShowReplyEditor(!showReplyEditor)} />
-          <RenoteButton />
-          <LikeButton />
-        </div>
+        {session?.user.role === "admin" && (
+          <div className="mt-2 flex items-center gap-4">
+            <ReplyButton comment={comment} onToggle={() => setShowReplyEditor(!showReplyEditor)} />
+            <RenoteButton />
+            <LikeButton />
+          </div>
+        )}
 
         {showReplyEditor && (
           <div className="mt-4">

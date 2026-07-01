@@ -17,8 +17,23 @@ import { marked } from "marked";
 import { isFollowersOnly, isNonList, isPublic } from "../utils-federation";
 import { uploadFile } from "./s3";
 import { federation } from "~/federation";
-import { Category, Image } from "~/generated/prisma";
+import { Category, Image, Prisma } from "~/generated/prisma";
 import { prisma } from "~/lib/prisma";
+
+const commentInclude = {
+  attachment: true,
+  actor: {
+    include: {
+      avatar: true,
+    },
+  },
+} satisfies Prisma.CommentInclude;
+
+type CommentWithReplies = Prisma.CommentGetPayload<{
+  include: typeof commentInclude;
+}> & {
+  replies: CommentWithReplies[];
+};
 
 export async function createPost(
   userId: string,
@@ -327,46 +342,28 @@ export async function getCommentsBySlug(slug: string) {
 
   const comments = await prisma.comment.findMany({
     where: { postId },
-    include: {
-      attachment: true,
-      actor: {
-        include: {
-          avatar: true,
-        },
-      },
-      replies: {
-        include: {
-          attachment: true,
-          actor: {
-            include: {
-              avatar: true,
-            },
-          },
-        },
-        orderBy: { createdAt: "asc" },
-      },
-    },
+    include: commentInclude,
     orderBy: { createdAt: "asc" },
   });
 
-  const mainActor = await prisma.mainActor.findFirst({
-    include: { actor: true },
-  });
+  const commentsById = new Map<string, CommentWithReplies>();
+  const topLevelComments: CommentWithReplies[] = [];
 
-  if (!mainActor) {
-    throw new Error("Main actor is not defined");
+  for (const comment of comments) {
+    commentsById.set(comment.id, { ...comment, replies: [] });
   }
 
-  const commentWithoutMainActor = comments.map((comment) => {
-    return {
-      ...comment,
-      mentions: (comment.mentions as { href: string; name: string }[]).filter(
-        (m) => m.href !== mainActor.actor.uri,
-      ),
-    };
-  });
+  for (const comment of commentsById.values()) {
+    const parent = comment.parentId ? commentsById.get(comment.parentId) : null;
 
-  return commentWithoutMainActor;
+    if (parent) {
+      parent.replies.push(comment);
+    } else {
+      topLevelComments.push(comment);
+    }
+  }
+
+  return topLevelComments;
 }
 
 export async function createComment(
@@ -415,7 +412,6 @@ export async function createComment(
     /@([a-zA-Z0-9_]+)(@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})?/g,
     (match, p1, p2) => {
       const actor = mentionActors.find((a) => a.preferredUsername === p1);
-      console.log("Mention match:", match, actor);
       if (actor) {
         return `<a href="${actor.url?.toString()}" class="u-url mention">@${p1}${p2 || ""}</a>`;
       }
