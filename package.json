@@ -8,7 +8,7 @@
     "start": "next start",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "oxlint --fix",
+    "lint": "oxlint --fix --max-warnings 0",
     "format": "oxfmt",
     "typecheck": "tsc --noEmit",
     "prisma": "prisma",
