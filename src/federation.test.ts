@@ -1,5 +1,15 @@
 import { Document, Follow, Note, Person, PUBLIC_COLLECTION } from "@fedify/fedify";
 
+import type {
+  Context,
+  Create,
+  Delete,
+  InboxContext,
+  RequestContext,
+  Undo,
+  Update,
+} from "@fedify/fedify";
+
 const mocks = vi.hoisted(() => ({
   prisma: {
     actor: { findFirst: vi.fn() },
@@ -30,8 +40,10 @@ vi.mock("./lib/utils-federation", () => ({
 
 const federationModule = await import("./federation");
 
-function createCtx() {
-  return {
+type NoteAttachments = ReturnType<Note["getAttachments"]>;
+
+function createCtx(object?: unknown) {
+  const ctx = {
     getActorKeyPairs: vi.fn(async () => []),
     getActorUri: vi.fn(
       (identifier: string) => new URL(`/users/${identifier}`, "https://example.com"),
@@ -43,13 +55,15 @@ function createCtx() {
       (_type: unknown, values: { slug: string }) =>
         new URL(`/post/${values.slug}`, "https://example.com"),
     ),
-    getObject: vi.fn(),
+    getObject: vi.fn(async () => object),
     getOutboxUri: vi.fn(
       (identifier: string) => new URL(`/users/${identifier}/outbox`, "https://example.com"),
     ),
     parseUri: vi.fn((url: URL) => ({ type: "actor", identifier: url.pathname.split("/").at(-1) })),
     sendActivity: vi.fn(),
   };
+
+  return ctx as typeof ctx & Context<unknown> & InboxContext<unknown> & RequestContext<unknown>;
 }
 
 function createRemoteActor(uri = "https://remote.test/users/bob") {
@@ -188,7 +202,10 @@ describe("federation inbox handlers", () => {
       .mockResolvedValueOnce({ id: "local-actor" })
       .mockResolvedValueOnce({ id: "remote-actor" });
 
-    await federationModule.handleUndo(createCtx(), undo as any);
+    await federationModule.handleUndo(
+      createCtx(),
+      undo as Pick<Undo, "actorId" | "getObject"> as Undo,
+    );
 
     expect(mocks.prisma.follows.deleteMany).toHaveBeenCalledWith({
       where: { followingId: "local-actor", followerId: "remote-actor" },
@@ -213,7 +230,7 @@ describe("federation inbox handlers", () => {
           url: new URL("https://remote.test/image.png"),
           mediaType: "image/png",
         });
-      })() as any,
+      })() as NoteAttachments,
     );
     mocks.prisma.posts.findFirst.mockResolvedValueOnce({ id: "post-1" });
     mocks.prisma.comment.findFirst.mockResolvedValueOnce(null);
@@ -226,7 +243,7 @@ describe("federation inbox handlers", () => {
       id: new URL("https://remote.test/activities/create-1"),
       actorId: author.id,
       getObject: vi.fn(async () => note),
-    } as any);
+    } as Pick<Create, "id" | "actorId" | "getObject"> as Create);
 
     expect(mocks.prisma.comment.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
@@ -260,7 +277,7 @@ describe("federation inbox handlers", () => {
     await federationModule.handleDelete(createCtx(), {
       objectId: new URL("https://remote.test/notes/1"),
       actorId: new URL("https://remote.test/users/bob"),
-    } as any);
+    } as Pick<Delete, "objectId" | "actorId"> as Delete);
 
     expect(mocks.prisma.comment.delete).toHaveBeenCalledWith({ where: { id: "comment-1" } });
   });
@@ -274,7 +291,7 @@ describe("federation inbox handlers", () => {
     await federationModule.handleDelete(createCtx(), {
       objectId: new URL("https://remote.test/notes/1"),
       actorId: new URL("https://evil.test/users/mallory"),
-    } as any);
+    } as Pick<Delete, "objectId" | "actorId"> as Delete);
 
     expect(mocks.prisma.comment.delete).not.toHaveBeenCalled();
   });
@@ -287,7 +304,7 @@ describe("federation inbox handlers", () => {
       ccs: [new URL("https://remote.test/users/bob/followers")],
       url: new URL("https://remote.test/@bob/1"),
     });
-    vi.spyOn(note, "getAttachments").mockReturnValue((async function* () {})() as any);
+    vi.spyOn(note, "getAttachments").mockReturnValue((async function* () {})() as NoteAttachments);
     mocks.prisma.comment.findFirst.mockResolvedValueOnce({
       id: "comment-1",
       actor: { uri: "https://remote.test/users/bob" },
@@ -297,7 +314,7 @@ describe("federation inbox handlers", () => {
     await federationModule.handleUpdate(createCtx(), {
       actorId: new URL("https://remote.test/users/bob"),
       getObject: vi.fn(async () => note),
-    } as any);
+    } as Pick<Update, "actorId" | "getObject"> as Update);
 
     expect(mocks.prisma.comment.update).toHaveBeenCalledWith({
       where: { id: "comment-1" },
@@ -342,15 +359,14 @@ describe("followers and object dispatchers", () => {
   });
 
   it("dispatches published posts as outbox Create activities", async () => {
-    const ctx = createCtx();
     const note = new Note({
       id: new URL("https://example.com/post/hello"),
       attribution: new URL("https://example.com/users/alice"),
       tos: [PUBLIC_COLLECTION],
       ccs: [new URL("https://example.com/users/alice/followers")],
     });
+    const ctx = createCtx(note);
     mocks.prisma.posts.findMany.mockResolvedValueOnce([{ slug: "hello" }]);
-    ctx.getObject = vi.fn(async () => note);
 
     const result = await federationModule.dispatchOutbox(ctx, "alice");
 

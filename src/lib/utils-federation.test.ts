@@ -12,6 +12,8 @@ import {
   isUniqueConstraintError,
 } from "./utils-federation";
 
+import type { Note } from "@fedify/fedify";
+
 describe("utils-federation", () => {
   describe("visibility helpers", () => {
     it("detects public addressing", () => {
@@ -44,7 +46,7 @@ describe("utils-federation", () => {
         }),
       };
 
-      expect(getTagFromNote(note as any)).toEqual([
+      expect(getTagFromNote(note as unknown as Note)).toEqual([
         { type: "Mention", href: "https://remote.test/users/bob", name: "@bob@remote.test" },
       ]);
     });
@@ -56,7 +58,7 @@ describe("utils-federation", () => {
         }),
       };
 
-      expect(getTagFromNote(note as any)).toEqual([
+      expect(getTagFromNote(note as unknown as Note)).toEqual([
         { type: "Mention", href: "https://remote.test/users/bob", name: "@bob@remote.test" },
       ]);
     });
@@ -64,7 +66,7 @@ describe("utils-federation", () => {
     it("returns an empty array when tag is absent", () => {
       const note = { toJsonLd: () => ({ type: "Note" }) };
 
-      expect(getTagFromNote(note as any)).toEqual([]);
+      expect(getTagFromNote(note as unknown as Note)).toEqual([]);
     });
   });
 

@@ -3,8 +3,7 @@ import { twMerge } from "tailwind-merge";
 
 import type { ClassValue } from "clsx";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type ComponentVariant<T extends (...args: any) => any> = Parameters<T>[0]["variant"];
+export type ComponentVariant<T extends (...args: never[]) => unknown> = Parameters<T>[0]["variant"];
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -13,7 +12,7 @@ export function cn(...inputs: ClassValue[]) {
 const DEFAULT_REDIRECT = "/";
 
 /**
- * This should be used any time the redirect path is user-provided
+ * This should be used whenever the redirect path is user-provided
  * (Like the query string on our login/signup pages). This avoids
  * open-redirect vulnerabilities.
  * @param {string} to The redirect destination

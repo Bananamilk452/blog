@@ -41,25 +41,23 @@ export async function getOptionalSession() {
   return session;
 }
 
-export function requireUserId(
+export function requireUserId<This extends { userId?: unknown }, Args extends unknown[], Return>(
   target: unknown,
   propertyKey: unknown,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  descriptor?: TypedPropertyDescriptor<any>,
+  descriptor?: TypedPropertyDescriptor<(this: This, ...args: Args) => Return>,
 ) {
-  if (!descriptor) {
+  if (!descriptor?.value) {
     throw new Error("Descriptor not found");
   }
 
   const originalMethod = descriptor.value;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  descriptor.value = async function (this: any, ...args: any[]) {
+  descriptor.value = async function (this: This, ...args: Args) {
     if (!this.userId) {
       throw new Error("User ID is required to perform this action.");
     }
     return await originalMethod.apply(this, args);
-  };
+  } as unknown as typeof originalMethod;
 }
 
 export async function downloadFile(url: string) {

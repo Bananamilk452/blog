@@ -10,7 +10,7 @@
     "test:watch": "vitest",
     "lint": "oxlint --fix",
     "format": "oxfmt",
-    "typecheck": "tsc --noEmit .",
+    "typecheck": "tsc --noEmit",
     "prisma": "prisma",
     "tunnel": "pnpx untun tunnel http://localhost:3000"
   },
