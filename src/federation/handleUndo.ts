@@ -1,10 +1,11 @@
-import { EmojiReact, Follow, Like } from "@fedify/fedify";
+import { EmojiReact, Follow, Like } from "@fedify/vocab";
 
 import { log } from "./log";
 import { prisma } from "~/lib/prisma";
 
 import type { InboxActivityStatus } from "./logInboxActivity";
-import type { InboxContext, Undo } from "@fedify/fedify";
+import type { InboxContext } from "@fedify/fedify";
+import type { Undo } from "@fedify/vocab";
 
 export async function handleUndo(
   ctx: InboxContext<unknown>,

@@ -11,7 +11,7 @@ import {
   Recipient,
   Undo,
   Update,
-} from "@fedify/fedify";
+} from "@fedify/vocab";
 import { Temporal } from "@js-temporal/polyfill";
 import DOMPurify from "isomorphic-dompurify";
 import { marked } from "marked";

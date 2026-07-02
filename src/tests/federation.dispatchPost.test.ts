@@ -1,4 +1,4 @@
-import { Note, PUBLIC_COLLECTION } from "@fedify/fedify";
+import { Note, PUBLIC_COLLECTION } from "@fedify/vocab";
 
 import { createCtx, mocks } from "./federation.helpers";
 
@@ -29,6 +29,11 @@ describe("dispatchPost", () => {
     expect(note?.ccIds.map((url) => url.href)).toContain(
       "https://example.com/users/alice/followers",
     );
+
+    const json = (await note?.toJsonLd()) as {
+      interactionPolicy?: { canQuote?: { automaticApproval?: string } };
+    };
+    expect(json.interactionPolicy?.canQuote?.automaticApproval).toBe("as:Public");
   });
 
   it("returns null for unknown posts", async () => {

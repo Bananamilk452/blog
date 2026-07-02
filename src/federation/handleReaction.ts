@@ -1,4 +1,4 @@
-import { Emoji, EmojiReact, isActor, Like } from "@fedify/fedify";
+import { Emoji, EmojiReact, isActor, Like } from "@fedify/vocab";
 
 import { log } from "./log";
 import { prisma } from "~/lib/prisma";

@@ -1,8 +1,8 @@
-import { Follow, Like } from "@fedify/fedify";
+import { Follow, Like } from "@fedify/vocab";
 
 import { createCtx, mocks } from "./federation.helpers";
 
-import type { Undo } from "@fedify/fedify";
+import type { Undo } from "@fedify/vocab";
 
 const { handleUndo } = await import("../federation/handleUndo");
 

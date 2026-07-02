@@ -1,11 +1,12 @@
-import { Accept } from "@fedify/fedify";
+import { Accept } from "@fedify/vocab";
 
 import { log } from "./log";
 import { prisma } from "~/lib/prisma";
 import { isUniqueConstraintError, upsertActor } from "~/lib/utils-federation";
 
 import type { InboxActivityStatus } from "./logInboxActivity";
-import type { Follow, InboxContext } from "@fedify/fedify";
+import type { InboxContext } from "@fedify/fedify";
+import type { Follow } from "@fedify/vocab";
 
 export async function handleFollow(
   ctx: InboxContext<unknown>,
@@ -31,7 +32,7 @@ export async function handleFollow(
   }
 
   log(
-    `Processing follow from @${follower.preferredUsername}@${follower.id.hostname} to @${object.handle}`,
+    `Processing follow from @${follower.preferredUsername}@${follower.id.hostname} to ${object.identifier}`,
   );
 
   const followingId = (

@@ -1,4 +1,4 @@
-import { Person } from "@fedify/fedify";
+import { Person } from "@fedify/vocab";
 
 const mocks = vi.hoisted(() => ({
   ctx: {

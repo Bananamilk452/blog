@@ -1,7 +1,8 @@
-import { Document, Mention, Note } from "@fedify/fedify";
+import { Document, Mention, Note } from "@fedify/vocab";
 import { Temporal } from "@js-temporal/polyfill";
 
 import { log } from "./log";
+import { createQuoteInteractionPolicy } from "./quoteAuthorization";
 import { prisma } from "~/lib/prisma";
 
 import type { RequestContext } from "@fedify/fedify";
@@ -41,6 +42,7 @@ export async function dispatchComment(ctx: RequestContext<unknown>, values: { sl
     ),
     content: comment.content,
     mediaType: "text/html",
+    interactionPolicy: createQuoteInteractionPolicy(),
     replyTarget: comment.parent ? new URL(comment.parent.uri) : new URL(comment.post.uri),
     attachments: comment.attachment.map(
       (att) =>

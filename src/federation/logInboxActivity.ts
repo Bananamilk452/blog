@@ -1,6 +1,7 @@
 import { prisma } from "~/lib/prisma";
 
-import type { Activity, InboxContext } from "@fedify/fedify";
+import type { InboxContext } from "@fedify/fedify";
+import type { Activity } from "@fedify/vocab";
 import type { Prisma } from "~/generated/prisma";
 
 export type InboxActivityStatus = "handled" | "ignored";

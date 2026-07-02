@@ -1,7 +1,8 @@
-import { Document, Note, PUBLIC_COLLECTION } from "@fedify/fedify";
+import { Document, Note, PUBLIC_COLLECTION } from "@fedify/vocab";
 import { Temporal } from "@js-temporal/polyfill";
 import { format } from "date-fns";
 
+import { createQuoteInteractionPolicy } from "./quoteAuthorization";
 import { prisma } from "~/lib/prisma";
 
 import type { RequestContext } from "@fedify/fedify";
@@ -29,6 +30,7 @@ export async function dispatchPost(ctx: RequestContext<unknown>, values: { slug:
     cc: ctx.getFollowersUri(post.actor.username),
     content,
     mediaType: "text/html",
+    interactionPolicy: createQuoteInteractionPolicy(),
     published: Temporal.Instant.from(
       post.publishedAt ? post.publishedAt.toISOString() : post.createdAt.toISOString(),
     ),

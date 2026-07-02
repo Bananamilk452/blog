@@ -1,4 +1,4 @@
-import { Note, PUBLIC_COLLECTION } from "@fedify/fedify";
+import { Note, PUBLIC_COLLECTION } from "@fedify/vocab";
 
 import { createCtx, mocks } from "./federation.helpers";
 

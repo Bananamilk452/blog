@@ -1,11 +1,12 @@
-import { isActor, Note } from "@fedify/fedify";
+import { isActor, Note } from "@fedify/vocab";
 
 import { log } from "./log";
 import { prisma } from "~/lib/prisma";
 import { formatNoteAttachments, getTagFromNote, upsertActor } from "~/lib/utils-federation";
 
 import type { InboxActivityStatus } from "./logInboxActivity";
-import type { InboxContext, Update } from "@fedify/fedify";
+import type { InboxContext } from "@fedify/fedify";
+import type { Update } from "@fedify/vocab";
 
 export async function handleUpdate(
   _ctx: InboxContext<unknown>,

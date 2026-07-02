@@ -1,4 +1,4 @@
-import { Follow } from "@fedify/fedify";
+import { Follow } from "@fedify/vocab";
 
 import { createCtx, mocks } from "./federation.helpers";
 

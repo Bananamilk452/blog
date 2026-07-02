@@ -1,4 +1,4 @@
-import { Document, Note, PUBLIC_COLLECTION } from "@fedify/fedify";
+import { Document, Note, PUBLIC_COLLECTION } from "@fedify/vocab";
 
 import { createCtx, mocks } from "./federation.helpers";
 
@@ -38,6 +38,11 @@ describe("dispatchComment", () => {
         .filter((attachment): attachment is Document => attachment instanceof Document)
         .map((attachment) => attachment.url?.href),
     ).toEqual(["https://remote.test/image.png"]);
+
+    const json = (await note?.toJsonLd()) as {
+      interactionPolicy?: { canQuote?: { automaticApproval?: string } };
+    };
+    expect(json.interactionPolicy?.canQuote?.automaticApproval).toBe("as:Public");
   });
 
   it("returns null when dispatching an unknown comment", async () => {

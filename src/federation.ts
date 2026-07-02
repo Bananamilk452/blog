@@ -1,3 +1,5 @@
+import { createFederation } from "@fedify/fedify";
+import { RedisKvStore, RedisMessageQueue } from "@fedify/redis";
 import {
   Create,
   Delete,
@@ -5,11 +7,11 @@ import {
   Follow,
   Like,
   Note,
+  QuoteAuthorization,
+  QuoteRequest,
   Undo,
   Update,
-  createFederation,
-} from "@fedify/fedify";
-import { RedisKvStore, RedisMessageQueue } from "@fedify/redis";
+} from "@fedify/vocab";
 import { Redis } from "ioredis";
 
 import { countFollowers } from "./federation/countFollowers";
@@ -22,10 +24,12 @@ import { dispatchOutbox } from "./federation/dispatchOutbox";
 import { handleCreate } from "./federation/handleCreate";
 import { handleDelete } from "./federation/handleDelete";
 import { handleFollow } from "./federation/handleFollow";
+import { handleQuoteRequest } from "./federation/handleQuoteRequest";
 import { handleReaction } from "./federation/handleReaction";
 import { handleUndo } from "./federation/handleUndo";
 import { handleUpdate } from "./federation/handleUpdate";
 import { logInboxActivity } from "./federation/logInboxActivity";
+import { dispatchQuoteAuthorization } from "./federation/quoteAuthorization";
 
 const redisUrl = process.env.REDIS_URL;
 
@@ -55,12 +59,18 @@ federation
   .on(Delete, logInboxActivity(handleDelete))
   .on(Update, logInboxActivity(handleUpdate))
   .on(Like, logInboxActivity(handleReaction))
-  .on(EmojiReact, logInboxActivity(handleReaction));
+  .on(EmojiReact, logInboxActivity(handleReaction))
+  .on(QuoteRequest, logInboxActivity(handleQuoteRequest));
 
 federation
   .setFollowersDispatcher("/users/{identifier}/followers", dispatchFollowers)
   .setCounter(countFollowers);
 
 federation.setObjectDispatcher(Note, "/post/{slug}", dispatchNote);
+federation.setObjectDispatcher(
+  QuoteAuthorization,
+  "/quote-authorizations/{stamp}",
+  dispatchQuoteAuthorization,
+);
 
 export { federation };

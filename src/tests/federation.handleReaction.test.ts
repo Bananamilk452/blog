@@ -1,4 +1,4 @@
-import { Emoji, EmojiReact, Image, Like } from "@fedify/fedify";
+import { Emoji, EmojiReact, Image, Like } from "@fedify/vocab";
 
 import { createCtx, createRemoteActor, mocks } from "./federation.helpers";
 

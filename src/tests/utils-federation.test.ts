@@ -1,4 +1,4 @@
-import { Document, Note, PUBLIC_COLLECTION } from "@fedify/fedify";
+import { Document, Note, PUBLIC_COLLECTION } from "@fedify/vocab";
 
 vi.mock("../lib/models/s3", () => ({ uploadFile: vi.fn() }));
 vi.mock("../lib/prisma", () => ({ prisma: {} }));
