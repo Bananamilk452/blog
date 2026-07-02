@@ -1,6 +1,8 @@
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { randomUUID } from "crypto";
 
+import { convertImageBufferToWebp } from "../utils-image";
+
 if (
   !process.env.S3_ENDPOINT ||
   !process.env.S3_ACCESS_KEY_ID ||
@@ -21,12 +23,12 @@ const client = new S3Client({
 });
 
 const MAX_UPLOAD_SIZE = 10 * 1024 * 1024;
-const ALLOWED_IMAGE_TYPES = new Map([
-  ["image/jpeg", "jpg"],
-  ["image/png", "png"],
-  ["image/gif", "gif"],
-  ["image/webp", "webp"],
-  ["image/avif", "avif"],
+const ALLOWED_IMAGE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "image/avif",
 ]);
 
 function detectImageType(buffer: Buffer) {
@@ -79,23 +81,19 @@ function validateUploadFile(file: File, buffer: Buffer) {
   if (file.type && file.type !== detectedType) {
     throw new Error("파일 형식과 실제 이미지 형식이 일치하지 않습니다.");
   }
-
-  return {
-    contentType: detectedType,
-    extension: ALLOWED_IMAGE_TYPES.get(detectedType)!,
-  };
 }
 
 export async function uploadFile(file: File, path: string) {
   const buffer = Buffer.from(await file.arrayBuffer());
-  const { contentType, extension } = validateUploadFile(file, buffer);
-  const filename = `${randomUUID()}.${extension}`;
+  validateUploadFile(file, buffer);
+  const optimizedBuffer = await convertImageBufferToWebp(buffer);
+  const filename = `${randomUUID()}.webp`;
 
   const command = new PutObjectCommand({
     Bucket: process.env.S3_BUCKET,
     Key: `${path}/${filename}`,
-    Body: buffer,
-    ContentType: contentType,
+    Body: optimizedBuffer,
+    ContentType: "image/webp",
   });
 
   try {

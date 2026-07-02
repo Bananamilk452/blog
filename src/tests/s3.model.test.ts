@@ -5,6 +5,10 @@ const s3Mocks = vi.hoisted(() => ({
   commands: [] as Array<Record<string, unknown>>,
 }));
 
+const imageMocks = vi.hoisted(() => ({
+  convertImageBufferToWebp: vi.fn(async (buffer: Buffer) => buffer),
+}));
+
 vi.mock("@aws-sdk/client-s3", () => ({
   PutObjectCommand: class {
     constructor(input: Record<string, unknown>) {
@@ -15,6 +19,8 @@ vi.mock("@aws-sdk/client-s3", () => ({
     send = s3Mocks.send;
   },
 }));
+
+vi.mock("../lib/utils-image", () => imageMocks);
 
 function pngBytes() {
   return new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -36,6 +42,8 @@ describe("uploadFile", () => {
   beforeEach(() => {
     s3Mocks.send.mockReset();
     s3Mocks.commands.length = 0;
+    imageMocks.convertImageBufferToWebp.mockReset();
+    imageMocks.convertImageBufferToWebp.mockImplementation(async (buffer: Buffer) => buffer);
   });
 
   it("uploads validated images with a UUID object key", async () => {
@@ -49,13 +57,25 @@ describe("uploadFile", () => {
     expect(s3Mocks.commands[0]).toMatchObject({
       Bucket: "bucket",
       Body: Buffer.from(pngBytes()),
-      ContentType: "image/png",
+      ContentType: "image/webp",
     });
+    expect(imageMocks.convertImageBufferToWebp).toHaveBeenCalledWith(Buffer.from(pngBytes()));
     expect(s3Mocks.commands[0]?.Key).toMatch(
-      /^medias\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.png$/,
+      /^medias\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.webp$/,
     );
     expect(String(s3Mocks.commands[0]?.Key)).not.toContain("original-name");
     expect(url).toBe(`https://cdn.example.com/${s3Mocks.commands[0]?.Key}`);
+  });
+
+  it("uploads optimized image bytes", async () => {
+    const optimizedBuffer = Buffer.from("optimized image");
+    imageMocks.convertImageBufferToWebp.mockResolvedValueOnce(optimizedBuffer);
+    const { uploadFile } = await importUploadFile();
+    const file = new File([pngBytes()], "image.png", { type: "image/png" });
+
+    await uploadFile(file, "medias");
+
+    expect(s3Mocks.commands[0]?.Body).toBe(optimizedBuffer);
   });
 
   it("rejects unsupported MIME types before uploading", async () => {
