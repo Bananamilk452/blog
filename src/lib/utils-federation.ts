@@ -1,4 +1,4 @@
-import { Activity, Document, getActorHandle, Note, PUBLIC_COLLECTION } from "@fedify/fedify";
+import { Activity, Document, getActorHandle, Note, PUBLIC_COLLECTION } from "@fedify/vocab";
 import debug from "debug";
 
 import { uploadFile } from "./models/s3";

@@ -1,4 +1,4 @@
-import { isActor, Note } from "@fedify/fedify";
+import { isActor, Note } from "@fedify/vocab";
 
 import { log } from "./log";
 import { prisma } from "~/lib/prisma";
@@ -10,7 +10,8 @@ import {
 } from "~/lib/utils-federation";
 
 import type { InboxActivityStatus } from "./logInboxActivity";
-import type { Create, InboxContext } from "@fedify/fedify";
+import type { InboxContext } from "@fedify/fedify";
+import type { Create } from "@fedify/vocab";
 
 export async function handleCreate(
   _ctx: InboxContext<unknown>,

@@ -1,7 +1,8 @@
 import { log } from "./log";
 import { prisma } from "~/lib/prisma";
 
-import type { Context, Recipient } from "@fedify/fedify";
+import type { Context } from "@fedify/fedify";
+import type { Recipient } from "@fedify/vocab";
 
 export async function dispatchFollowers(_ctx: Context<unknown>, identifier: string) {
   log(`Dispatching followers for identifier: ${identifier}`);

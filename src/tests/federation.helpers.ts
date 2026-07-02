@@ -1,4 +1,4 @@
-import { Document, Note, Person } from "@fedify/fedify";
+import { Document, Note, Person } from "@fedify/vocab";
 
 import type { Context, InboxContext, RequestContext } from "@fedify/fedify";
 
@@ -104,8 +104,11 @@ export function createCtx(object?: unknown) {
       (identifier: string) => new URL(`/users/${identifier}/followers`, "https://example.com"),
     ),
     getObjectUri: vi.fn(
-      (_type: unknown, values: { slug: string }) =>
-        new URL(`/post/${values.slug}`, "https://example.com"),
+      (_type: unknown, values: { slug?: string; stamp?: string }) =>
+        new URL(
+          values.stamp ? `/quote-authorizations/${values.stamp}` : `/post/${values.slug}`,
+          "https://example.com",
+        ),
     ),
     getObject: vi.fn(async () => object),
     getOutboxUri: vi.fn(

@@ -1,4 +1,5 @@
-import { ActorKeyPair, Endpoints, Image, Person } from "@fedify/fedify";
+import { ActorKeyPair } from "@fedify/fedify";
+import { Endpoints, Image, Person } from "@fedify/vocab";
 
 import { log } from "./log";
 import { prisma } from "~/lib/prisma";

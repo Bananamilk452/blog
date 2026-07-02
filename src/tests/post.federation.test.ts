@@ -1,4 +1,4 @@
-import { Like, Note, Undo } from "@fedify/fedify";
+import { Like, Note, Undo } from "@fedify/vocab";
 
 const mocks = vi.hoisted(() => ({
   ctx: {

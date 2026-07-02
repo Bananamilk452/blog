@@ -1,4 +1,4 @@
-import { Create, Note } from "@fedify/fedify";
+import { Create, Note } from "@fedify/vocab";
 
 import { log } from "./log";
 import { prisma } from "~/lib/prisma";

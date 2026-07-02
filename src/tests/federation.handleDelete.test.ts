@@ -1,6 +1,6 @@
 import { createCtx, mocks } from "./federation.helpers";
 
-import type { Delete } from "@fedify/fedify";
+import type { Delete } from "@fedify/vocab";
 
 const { handleDelete } = await import("../federation/handleDelete");
 

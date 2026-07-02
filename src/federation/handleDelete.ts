@@ -2,7 +2,8 @@ import { log } from "./log";
 import { prisma } from "~/lib/prisma";
 
 import type { InboxActivityStatus } from "./logInboxActivity";
-import type { Delete, InboxContext } from "@fedify/fedify";
+import type { InboxContext } from "@fedify/fedify";
+import type { Delete } from "@fedify/vocab";
 
 export async function handleDelete(
   _ctx: InboxContext<unknown>,

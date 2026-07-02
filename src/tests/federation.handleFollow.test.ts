@@ -1,4 +1,4 @@
-import { Follow } from "@fedify/fedify";
+import { Follow } from "@fedify/vocab";
 
 import { createCtx, createRemoteActor, mocks } from "./federation.helpers";
 

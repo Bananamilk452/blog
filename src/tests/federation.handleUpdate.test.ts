@@ -1,9 +1,9 @@
-import { Note, PUBLIC_COLLECTION } from "@fedify/fedify";
+import { Note, PUBLIC_COLLECTION } from "@fedify/vocab";
 
 import { createCtx, createRemoteActor, mocks } from "./federation.helpers";
 
 import type { NoteAttachments } from "./federation.helpers";
-import type { Update } from "@fedify/fedify";
+import type { Update } from "@fedify/vocab";
 
 const { handleUpdate } = await import("../federation/handleUpdate");
 

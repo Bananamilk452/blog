@@ -1,4 +1,4 @@
-import { Update } from "@fedify/fedify";
+import { Update } from "@fedify/vocab";
 
 import { prisma } from "../prisma";
 import { uploadFile } from "./s3";
