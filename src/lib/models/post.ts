@@ -4,10 +4,12 @@ import {
   Delete,
   Document,
   isActor,
+  Like,
   Mention,
   Note,
   PUBLIC_COLLECTION,
   Recipient,
+  Undo,
   Update,
 } from "@fedify/fedify";
 import { Temporal } from "@js-temporal/polyfill";
@@ -22,6 +24,7 @@ import { prisma } from "~/lib/prisma";
 
 const commentInclude = {
   attachment: true,
+  reactions: true,
   actor: {
     include: {
       avatar: true,
@@ -284,6 +287,7 @@ export async function getPostBySlug(slug: string, userId?: string) {
       },
       banner: true,
       category: true,
+      reactions: true,
     },
   });
 
@@ -623,4 +627,181 @@ export async function createComment(
   }
 
   return comment;
+}
+
+export async function createReaction(data: {
+  targetType: "post" | "comment";
+  targetId: string;
+  content: string;
+}) {
+  const mainActor = await prisma.mainActor.findFirst({
+    include: { actor: true },
+  });
+
+  if (!mainActor) {
+    throw new Error("Main actor is not defined");
+  }
+
+  const ctx = federation.createContext(new Request(process.env.PUBLIC_URL!), undefined);
+  const target =
+    data.targetType === "post"
+      ? await prisma.posts.findUniqueOrThrow({
+          where: { id: data.targetId },
+          select: {
+            id: true,
+            uri: true,
+            actor: true,
+          },
+        })
+      : await prisma.comment.findUniqueOrThrow({
+          where: { id: data.targetId },
+          select: {
+            id: true,
+            uri: true,
+            actor: true,
+            post: {
+              select: {
+                actor: true,
+              },
+            },
+          },
+        });
+
+  const existingReaction = await prisma.reaction.findFirst({
+    where: {
+      actorId: mainActor.actor.id,
+      ...(data.targetType === "post" ? { postId: data.targetId } : { commentId: data.targetId }),
+    },
+  });
+
+  if (existingReaction?.content === data.content) return existingReaction;
+
+  const reactionId = crypto.randomUUID();
+  const reactionUri = `${process.env.PUBLIC_URL}/activities/${reactionId}`;
+  const followersUri = ctx.getFollowersUri(mainActor.actor.username).href;
+  const targetActor = data.targetType === "post" ? target.actor : target.actor;
+  const to = [targetActor.uri];
+  const cc = [followersUri];
+
+  const directRecipient =
+    targetActor.uri === mainActor.actor.uri
+      ? null
+      : {
+          id: new URL(targetActor.uri),
+          inboxId: new URL(targetActor.inboxUrl),
+          endpoints: targetActor.sharedInboxUrl
+            ? { sharedInbox: new URL(targetActor.sharedInboxUrl) }
+            : null,
+        };
+
+  if (existingReaction) {
+    const undo = new Undo({
+      id: new URL(`${process.env.PUBLIC_URL}/activities/${crypto.randomUUID()}`),
+      actor: new URL(mainActor.actor.uri),
+      object: new URL(existingReaction.uri),
+      tos: existingReaction.to.map((uri) => new URL(uri)),
+      ccs: existingReaction.cc.map((uri) => new URL(uri)),
+    });
+
+    await ctx.sendActivity({ identifier: mainActor.actor.username }, "followers", undo);
+
+    if (directRecipient) {
+      await ctx.sendActivity({ identifier: mainActor.actor.username }, [directRecipient], undo);
+    }
+
+    await prisma.reaction.delete({ where: { id: existingReaction.id } });
+  }
+
+  const reaction = await prisma.reaction.create({
+    data: {
+      uri: reactionUri,
+      activityType: "Like",
+      content: data.content,
+      actorId: mainActor.actor.id,
+      postId: data.targetType === "post" ? data.targetId : undefined,
+      commentId: data.targetType === "comment" ? data.targetId : undefined,
+      targetUri: target.uri,
+      to,
+      cc,
+    },
+  });
+
+  const activity = new Like({
+    id: new URL(reactionUri),
+    actor: new URL(mainActor.actor.uri),
+    object: new URL(target.uri),
+    content: data.content === "❤️" ? undefined : data.content,
+    tos: to.map((uri) => new URL(uri)),
+    ccs: cc.map((uri) => new URL(uri)),
+  });
+
+  await ctx.sendActivity({ identifier: mainActor.actor.username }, "followers", activity);
+
+  if (directRecipient) {
+    await ctx.sendActivity({ identifier: mainActor.actor.username }, [directRecipient], activity);
+  }
+
+  return reaction;
+}
+
+export async function deleteReaction(data: {
+  targetType: "post" | "comment";
+  targetId: string;
+  content: string;
+}) {
+  const mainActor = await prisma.mainActor.findFirst({
+    include: { actor: true },
+  });
+
+  if (!mainActor) {
+    throw new Error("Main actor is not defined");
+  }
+
+  const reaction = await prisma.reaction.findFirst({
+    where: {
+      actorId: mainActor.actor.id,
+      content: data.content,
+      ...(data.targetType === "post" ? { postId: data.targetId } : { commentId: data.targetId }),
+    },
+  });
+
+  if (!reaction) return null;
+
+  const ctx = federation.createContext(new Request(process.env.PUBLIC_URL!), undefined);
+  const target =
+    data.targetType === "post"
+      ? await prisma.posts.findUniqueOrThrow({
+          where: { id: data.targetId },
+          select: { actor: true },
+        })
+      : await prisma.comment.findUniqueOrThrow({
+          where: { id: data.targetId },
+          select: { actor: true },
+        });
+  const targetActor = target.actor;
+  const directRecipient =
+    targetActor.uri === mainActor.actor.uri
+      ? null
+      : {
+          id: new URL(targetActor.uri),
+          inboxId: new URL(targetActor.inboxUrl),
+          endpoints: targetActor.sharedInboxUrl
+            ? { sharedInbox: new URL(targetActor.sharedInboxUrl) }
+            : null,
+        };
+  const undo = new Undo({
+    id: new URL(`${process.env.PUBLIC_URL}/activities/${crypto.randomUUID()}`),
+    actor: new URL(mainActor.actor.uri),
+    object: new URL(reaction.uri),
+    tos: reaction.to.map((uri) => new URL(uri)),
+    ccs: reaction.cc.map((uri) => new URL(uri)),
+  });
+
+  await ctx.sendActivity({ identifier: mainActor.actor.username }, "followers", undo);
+
+  if (directRecipient) {
+    await ctx.sendActivity({ identifier: mainActor.actor.username }, [directRecipient], undo);
+  }
+
+  return await prisma.reaction.delete({ where: { id: reaction.id } });
 }

@@ -7,6 +7,7 @@ import { useMemo } from "react";
 import { PostDropdownMenu } from "~/components/dashboard/post/PostPaginationList";
 import { PostComments } from "~/components/post/PostComment";
 import { PostToc, TocHeading } from "~/components/post/PostToc";
+import { ReactionButton } from "~/components/post/ReactionButton";
 import { Badge } from "~/components/ui/badge";
 import { Image as ImageType, User } from "~/generated/prisma";
 import { usePost } from "~/hooks/usePost";
@@ -55,6 +56,15 @@ export function PostPage({ slug }: { slug: string }) {
                 <p className="m-0">{format(new Date(post.updatedAt), "yyyy년 MM월 dd일 HH:mm")}</p>
               </div>
             </div>
+          </div>
+
+          <div className="relative z-10 mt-5">
+            <ReactionButton
+              targetType="post"
+              targetId={post.id}
+              reactions={post.reactions}
+              canReact={session?.user.role === "admin"}
+            />
           </div>
         </section>
 

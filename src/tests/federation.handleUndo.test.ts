@@ -1,4 +1,4 @@
-import { Follow } from "@fedify/fedify";
+import { Follow, Like } from "@fedify/fedify";
 
 import { createCtx, mocks } from "./federation.helpers";
 
@@ -28,6 +28,27 @@ describe("handleUndo", () => {
 
     expect(mocks.prisma.follows.deleteMany).toHaveBeenCalledWith({
       where: { followingId: "local-actor", followerId: "remote-actor" },
+    });
+  });
+
+  it("removes a reaction on Undo(Like)", async () => {
+    const like = new Like({
+      id: new URL("https://remote.test/activities/like-1"),
+      actor: new URL("https://remote.test/users/bob"),
+      object: new URL("https://example.com/post/hello"),
+    });
+    const undo = {
+      actorId: new URL("https://remote.test/users/bob"),
+      getObject: vi.fn(async () => like),
+    };
+
+    await handleUndo(createCtx(), undo as Pick<Undo, "actorId" | "getObject"> as Undo);
+
+    expect(mocks.prisma.reaction.deleteMany).toHaveBeenCalledWith({
+      where: {
+        uri: "https://remote.test/activities/like-1",
+        actor: { uri: "https://remote.test/users/bob" },
+      },
     });
   });
 });

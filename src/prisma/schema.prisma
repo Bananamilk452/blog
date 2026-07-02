@@ -34,6 +34,7 @@ model Actor {
   mainActor      MainActor?
   posts          Posts[]
   comments       Comment[]
+  reactions      Reaction[]
   avatar         Image?     @relation("Avatar", fields: [avatarId], references: [id])
   avatarId       String?    @unique
   banner         Image?     @relation("Banner", fields: [bannerId], references: [id])
@@ -107,6 +108,7 @@ model Posts {
   banner      Image?    @relation("PostBanner", fields: [bannerId], references: [id])
   bannerId    String?   @unique
   comments    Comment[]
+  reactions   Reaction[]
 
   @@map("posts")
 }
@@ -233,10 +235,38 @@ model Comment {
   cc         String[]     @default([])
   mentions   Json[]       @default([])
   attachment Attachment[]
+  reactions  Reaction[]
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @default(now()) @updatedAt
 
   @@map("comments")
+}
+
+model Reaction {
+  id                 String   @id @default(uuid(7))
+  uri                String   @unique
+  activityType       String
+  content            String
+  actorId            String
+  actor              Actor    @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  postId             String?
+  post               Posts?   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  commentId          String?
+  comment            Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  targetUri          String
+  to                 String[] @default([])
+  cc                 String[] @default([])
+  emojiName          String?
+  emojiIconUrl       String?
+  emojiIconMediaType String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @default(now()) @updatedAt
+
+  @@unique([actorId, postId, content])
+  @@unique([actorId, commentId, content])
+  @@index([targetUri])
+  @@index([activityType])
+  @@map("reactions")
 }
 
 model Attachment {

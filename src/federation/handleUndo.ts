@@ -1,4 +1,4 @@
-import { Follow } from "@fedify/fedify";
+import { EmojiReact, Follow, Like } from "@fedify/fedify";
 
 import { log } from "./log";
 import { prisma } from "~/lib/prisma";
@@ -13,7 +13,33 @@ export async function handleUndo(
   log(`Received Undo activity: ${undo.id?.href}`);
 
   const object = await undo.getObject();
-  if (!(object instanceof Follow)) return "ignored";
+
+  if (object instanceof Like || object instanceof EmojiReact) {
+    if (undo.actorId == null || object.id == null) return "ignored";
+
+    await prisma.reaction.deleteMany({
+      where: {
+        uri: object.id.href,
+        actor: { uri: undo.actorId.href },
+      },
+    });
+
+    return "handled";
+  }
+
+  if (!(object instanceof Follow)) {
+    if (undo.objectId == null || undo.actorId == null) return "ignored";
+
+    const result = await prisma.reaction.deleteMany({
+      where: {
+        uri: undo.objectId.href,
+        actor: { uri: undo.actorId.href },
+      },
+    });
+
+    return result.count > 0 ? "handled" : "ignored";
+  }
+
   if (undo.actorId == null || object.objectId == null) return "ignored";
 
   const parsed = ctx.parseUri(object.objectId);

@@ -3,12 +3,13 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import DOMPurify from "isomorphic-dompurify";
-import { HeartIcon, ImageIcon, Repeat2Icon, ReplyIcon, XIcon } from "lucide-react";
+import { ImageIcon, ReplyIcon, XIcon } from "lucide-react";
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
+import { ReactionButton } from "./ReactionButton";
 import { Button } from "~/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "~/components/ui/form";
 import { Textarea } from "~/components/ui/textarea";
@@ -104,12 +105,22 @@ function CommentItem({
             })}
         </div>
 
-        {session?.user.role === "admin" && (
-          <div className="mt-2 flex items-center gap-4">
-            <ReplyButton comment={comment} onToggle={() => setShowReplyEditor(!showReplyEditor)} />
-            <LikeButton />
-          </div>
-        )}
+        <div className="mt-2 flex items-center gap-4">
+          {session?.user.role === "admin" && (
+            <>
+              <ReplyButton
+                comment={comment}
+                onToggle={() => setShowReplyEditor(!showReplyEditor)}
+              />
+            </>
+          )}
+          <ReactionButton
+            targetType="comment"
+            targetId={comment.id}
+            reactions={comment.reactions}
+            canReact={session?.user.role === "admin"}
+          />
+        </div>
 
         {showReplyEditor && (
           <div className="mt-4">
@@ -149,14 +160,6 @@ function ReplyButton({
     >
       <span className="text-sm">{"replies" in comment && comment.replies.length}</span>
       <ReplyIcon className="size-4" />
-    </button>
-  );
-}
-
-function LikeButton() {
-  return (
-    <button className="flex cursor-pointer items-center gap-1 text-(--ink-soft) hover:text-(--accent-paper)">
-      <HeartIcon className="size-4" />
     </button>
   );
 }

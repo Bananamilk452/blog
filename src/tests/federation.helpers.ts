@@ -12,6 +12,7 @@ vi.hoisted(() => {
       inboxActivityLog: { create: vi.fn(), update: vi.fn(), findMany: vi.fn(), count: vi.fn() },
       posts: { count: vi.fn(), findFirst: vi.fn(), findMany: vi.fn() },
       comment: { create: vi.fn(), delete: vi.fn(), findFirst: vi.fn(), update: vi.fn() },
+      reaction: { create: vi.fn(), deleteMany: vi.fn(), findFirst: vi.fn() },
     },
     upsertActor: vi.fn(),
     getTagFromNote: vi.fn(),
@@ -44,6 +45,11 @@ type FederationTestMocks = {
       delete: ReturnType<typeof vi.fn>;
       findFirst: ReturnType<typeof vi.fn>;
       update: ReturnType<typeof vi.fn>;
+    };
+    reaction: {
+      create: ReturnType<typeof vi.fn>;
+      deleteMany: ReturnType<typeof vi.fn>;
+      findFirst: ReturnType<typeof vi.fn>;
     };
   };
   upsertActor: ReturnType<typeof vi.fn>;
