@@ -107,7 +107,6 @@ function CommentItem({
         {session?.user.role === "admin" && (
           <div className="mt-2 flex items-center gap-4">
             <ReplyButton comment={comment} onToggle={() => setShowReplyEditor(!showReplyEditor)} />
-            <RenoteButton />
             <LikeButton />
           </div>
         )}
@@ -150,14 +149,6 @@ function ReplyButton({
     >
       <span className="text-sm">{"replies" in comment && comment.replies.length}</span>
       <ReplyIcon className="size-4" />
-    </button>
-  );
-}
-
-function RenoteButton() {
-  return (
-    <button className="flex cursor-pointer items-center gap-1 text-(--ink-soft) hover:text-(--accent-paper)">
-      <Repeat2Icon className="size-4" />
     </button>
   );
 }
