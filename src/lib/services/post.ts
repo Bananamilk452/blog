@@ -1,6 +1,7 @@
 import {
   createComment,
   createPost,
+  createReaction,
   deletePost,
   getCategories,
   getCommentsBySlug,
@@ -108,5 +109,10 @@ export class PostService {
 
     const comment = await createComment(mainActor.actor.id, data);
     return comment;
+  }
+
+  @requireUserId
+  async createReaction(data: Parameters<typeof createReaction>[0]) {
+    return await createReaction(data);
   }
 }

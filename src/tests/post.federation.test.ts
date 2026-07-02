@@ -1,4 +1,4 @@
-import { Note } from "@fedify/fedify";
+import { Like, Note, Undo } from "@fedify/fedify";
 
 const mocks = vi.hoisted(() => ({
   ctx: {
@@ -21,7 +21,13 @@ const mocks = vi.hoisted(() => ({
       create: vi.fn(),
       findMany: vi.fn(),
       findUnique: vi.fn(),
+      findUniqueOrThrow: vi.fn(),
       update: vi.fn(),
+    },
+    reaction: {
+      create: vi.fn(),
+      delete: vi.fn(),
+      findFirst: vi.fn(),
     },
   },
 }));
@@ -53,6 +59,8 @@ function localMainActor() {
       id: "local-actor-id",
       username: "alice",
       uri: "https://example.com/users/alice",
+      inboxUrl: "https://example.com/users/alice/inbox",
+      sharedInboxUrl: null,
     },
   };
 }
@@ -163,6 +171,7 @@ describe("post model federation publishing", () => {
       where: { postId: "post-1" },
       include: {
         attachment: true,
+        reactions: true,
         actor: {
           include: {
             avatar: true,
@@ -221,6 +230,71 @@ describe("post model federation publishing", () => {
     const comments = await postModel.getCommentsBySlug("hello", { includeFollowersOnly: true });
 
     expect(comments.map((comment) => comment.id)).toEqual(["comment-1"]);
+  });
+
+  it("sends a heart reaction as Like", async () => {
+    mocks.prisma.mainActor.findFirst.mockResolvedValueOnce(localMainActor());
+    mocks.prisma.posts.findUniqueOrThrow.mockResolvedValueOnce({
+      id: "post-1",
+      uri: "https://example.com/post/hello",
+      actor: localMainActor().actor,
+    });
+    mocks.prisma.reaction.findFirst.mockResolvedValueOnce(null);
+    mocks.prisma.reaction.create.mockResolvedValueOnce({ id: "reaction-1", content: "❤️" });
+
+    await postModel.createReaction({ targetType: "post", targetId: "post-1", content: "❤️" });
+
+    expect(mocks.prisma.reaction.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ activityType: "Like", content: "❤️" }),
+    });
+    expect(mocks.ctx.sendActivity.mock.calls[0][2]).toBeInstanceOf(Like);
+  });
+
+  it("sends a non-heart reaction as Like with content", async () => {
+    mocks.prisma.mainActor.findFirst.mockResolvedValueOnce(localMainActor());
+    mocks.prisma.posts.findUniqueOrThrow.mockResolvedValueOnce({
+      id: "post-1",
+      uri: "https://example.com/post/hello",
+      actor: localMainActor().actor,
+    });
+    mocks.prisma.reaction.findFirst.mockResolvedValueOnce(null);
+    mocks.prisma.reaction.create.mockResolvedValueOnce({ id: "reaction-1", content: "🔥" });
+
+    await postModel.createReaction({ targetType: "post", targetId: "post-1", content: "🔥" });
+
+    expect(mocks.prisma.reaction.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ activityType: "Like", content: "🔥" }),
+    });
+    expect(mocks.ctx.sendActivity.mock.calls[0][2]).toBeInstanceOf(Like);
+    expect(mocks.ctx.sendActivity.mock.calls[0][2].content?.toString()).toBe("🔥");
+  });
+
+  it("undoes and replaces an existing reaction on the same post", async () => {
+    mocks.prisma.mainActor.findFirst.mockResolvedValueOnce(localMainActor());
+    mocks.prisma.posts.findUniqueOrThrow.mockResolvedValueOnce({
+      id: "post-1",
+      uri: "https://example.com/post/hello",
+      actor: {
+        ...localMainActor().actor,
+        uri: "https://remote.test/users/bob",
+        inboxUrl: "https://remote.test/users/bob/inbox",
+        sharedInboxUrl: "https://remote.test/inbox",
+      },
+    });
+    mocks.prisma.reaction.findFirst.mockResolvedValueOnce({
+      id: "reaction-old",
+      uri: "https://example.com/activities/old",
+      content: "😂",
+      to: ["https://remote.test/users/bob"],
+      cc: ["https://example.com/users/alice/followers"],
+    });
+    mocks.prisma.reaction.create.mockResolvedValueOnce({ id: "reaction-new", content: "🔥" });
+
+    await postModel.createReaction({ targetType: "post", targetId: "post-1", content: "🔥" });
+
+    expect(mocks.ctx.sendActivity.mock.calls[0][2]).toBeInstanceOf(Undo);
+    expect(mocks.prisma.reaction.delete).toHaveBeenCalledWith({ where: { id: "reaction-old" } });
+    expect(mocks.ctx.sendActivity.mock.calls.at(-1)?.[2]).toBeInstanceOf(Like);
   });
 });
 

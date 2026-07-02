@@ -1,4 +1,14 @@
-import { Create, Delete, Follow, Note, Undo, Update, createFederation } from "@fedify/fedify";
+import {
+  Create,
+  Delete,
+  EmojiReact,
+  Follow,
+  Like,
+  Note,
+  Undo,
+  Update,
+  createFederation,
+} from "@fedify/fedify";
 import { RedisKvStore, RedisMessageQueue } from "@fedify/redis";
 import { Redis } from "ioredis";
 
@@ -12,6 +22,7 @@ import { dispatchOutbox } from "./federation/dispatchOutbox";
 import { handleCreate } from "./federation/handleCreate";
 import { handleDelete } from "./federation/handleDelete";
 import { handleFollow } from "./federation/handleFollow";
+import { handleReaction } from "./federation/handleReaction";
 import { handleUndo } from "./federation/handleUndo";
 import { handleUpdate } from "./federation/handleUpdate";
 import { logInboxActivity } from "./federation/logInboxActivity";
@@ -42,7 +53,9 @@ federation
   .on(Undo, logInboxActivity(handleUndo))
   .on(Create, logInboxActivity(handleCreate))
   .on(Delete, logInboxActivity(handleDelete))
-  .on(Update, logInboxActivity(handleUpdate));
+  .on(Update, logInboxActivity(handleUpdate))
+  .on(Like, logInboxActivity(handleReaction))
+  .on(EmojiReact, logInboxActivity(handleReaction));
 
 federation
   .setFollowersDispatcher("/users/{identifier}/followers", dispatchFollowers)
