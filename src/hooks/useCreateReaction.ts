@@ -4,7 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-import { createReaction } from "~/lib/actions/post";
+import { createReaction, deleteReaction } from "~/lib/actions/post";
 
 export function useCreateReaction() {
   const router = useRouter();
@@ -18,6 +18,22 @@ export function useCreateReaction() {
     onError: (error) => {
       console.error("Failed to create reaction:", error);
       toast.error("리액션 전송에 실패했습니다. 다시 시도해주세요.");
+    },
+  });
+}
+
+export function useDeleteReaction() {
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: (data: Parameters<typeof deleteReaction>[0]) => deleteReaction(data),
+    onSuccess: () => {
+      toast.success("리액션을 취소했습니다.");
+      router.refresh();
+    },
+    onError: (error) => {
+      console.error("Failed to delete reaction:", error);
+      toast.error("리액션 취소에 실패했습니다. 다시 시도해주세요.");
     },
   });
 }

@@ -120,3 +120,13 @@ export async function createReaction(
 
   return await postService.createReaction(data);
 }
+
+export async function deleteReaction(
+  data: Parameters<typeof PostService.prototype.deleteReaction>[0],
+) {
+  const session = await getValidAdminSession();
+
+  const postService = new PostService(session.user.id);
+
+  return await postService.deleteReaction(data);
+}

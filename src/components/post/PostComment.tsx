@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import DOMPurify from "isomorphic-dompurify";
-import { ImageIcon, Repeat2Icon, ReplyIcon, XIcon } from "lucide-react";
+import { ImageIcon, ReplyIcon, XIcon } from "lucide-react";
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";

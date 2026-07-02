@@ -2,6 +2,7 @@ import {
   createComment,
   createPost,
   createReaction,
+  deleteReaction,
   deletePost,
   getCategories,
   getCommentsBySlug,
@@ -114,5 +115,10 @@ export class PostService {
   @requireUserId
   async createReaction(data: Parameters<typeof createReaction>[0]) {
     return await createReaction(data);
+  }
+
+  @requireUserId
+  async deleteReaction(data: Parameters<typeof deleteReaction>[0]) {
+    return await deleteReaction(data);
   }
 }

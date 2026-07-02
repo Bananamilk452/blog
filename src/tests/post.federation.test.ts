@@ -296,6 +296,31 @@ describe("post model federation publishing", () => {
     expect(mocks.prisma.reaction.delete).toHaveBeenCalledWith({ where: { id: "reaction-old" } });
     expect(mocks.ctx.sendActivity.mock.calls.at(-1)?.[2]).toBeInstanceOf(Like);
   });
+
+  it("undoes and deletes an existing reaction when cancelling", async () => {
+    mocks.prisma.mainActor.findFirst.mockResolvedValueOnce(localMainActor());
+    mocks.prisma.reaction.findFirst.mockResolvedValueOnce({
+      id: "reaction-1",
+      uri: "https://example.com/activities/reaction-1",
+      content: "🔥",
+      to: ["https://remote.test/users/bob"],
+      cc: ["https://example.com/users/alice/followers"],
+    });
+    mocks.prisma.posts.findUniqueOrThrow.mockResolvedValueOnce({
+      actor: {
+        ...localMainActor().actor,
+        uri: "https://remote.test/users/bob",
+        inboxUrl: "https://remote.test/users/bob/inbox",
+        sharedInboxUrl: "https://remote.test/inbox",
+      },
+    });
+    mocks.prisma.reaction.delete.mockResolvedValueOnce({ id: "reaction-1", content: "🔥" });
+
+    await postModel.deleteReaction({ targetType: "post", targetId: "post-1", content: "🔥" });
+
+    expect(mocks.ctx.sendActivity.mock.calls[0][2]).toBeInstanceOf(Undo);
+    expect(mocks.prisma.reaction.delete).toHaveBeenCalledWith({ where: { id: "reaction-1" } });
+  });
 });
 
 function comment({

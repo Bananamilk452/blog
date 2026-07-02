@@ -743,3 +743,65 @@ export async function createReaction(data: {
 
   return reaction;
 }
+
+export async function deleteReaction(data: {
+  targetType: "post" | "comment";
+  targetId: string;
+  content: string;
+}) {
+  const mainActor = await prisma.mainActor.findFirst({
+    include: { actor: true },
+  });
+
+  if (!mainActor) {
+    throw new Error("Main actor is not defined");
+  }
+
+  const reaction = await prisma.reaction.findFirst({
+    where: {
+      actorId: mainActor.actor.id,
+      content: data.content,
+      ...(data.targetType === "post" ? { postId: data.targetId } : { commentId: data.targetId }),
+    },
+  });
+
+  if (!reaction) return null;
+
+  const ctx = federation.createContext(new Request(process.env.PUBLIC_URL!), undefined);
+  const target =
+    data.targetType === "post"
+      ? await prisma.posts.findUniqueOrThrow({
+          where: { id: data.targetId },
+          select: { actor: true },
+        })
+      : await prisma.comment.findUniqueOrThrow({
+          where: { id: data.targetId },
+          select: { actor: true },
+        });
+  const targetActor = target.actor;
+  const directRecipient =
+    targetActor.uri === mainActor.actor.uri
+      ? null
+      : {
+          id: new URL(targetActor.uri),
+          inboxId: new URL(targetActor.inboxUrl),
+          endpoints: targetActor.sharedInboxUrl
+            ? { sharedInbox: new URL(targetActor.sharedInboxUrl) }
+            : null,
+        };
+  const undo = new Undo({
+    id: new URL(`${process.env.PUBLIC_URL}/activities/${crypto.randomUUID()}`),
+    actor: new URL(mainActor.actor.uri),
+    object: new URL(reaction.uri),
+    tos: reaction.to.map((uri) => new URL(uri)),
+    ccs: reaction.cc.map((uri) => new URL(uri)),
+  });
+
+  await ctx.sendActivity({ identifier: mainActor.actor.username }, "followers", undo);
+
+  if (directRecipient) {
+    await ctx.sendActivity({ identifier: mainActor.actor.username }, [directRecipient], undo);
+  }
+
+  return await prisma.reaction.delete({ where: { id: reaction.id } });
+}

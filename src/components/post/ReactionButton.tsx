@@ -4,7 +4,7 @@ import { HeartIcon } from "lucide-react";
 import { useState } from "react";
 
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
-import { useCreateReaction } from "~/hooks/useCreateReaction";
+import { useCreateReaction, useDeleteReaction } from "~/hooks/useCreateReaction";
 
 type Reaction = {
   id: string;
@@ -30,8 +30,9 @@ export function ReactionButton({
 }) {
   const [open, setOpen] = useState(false);
   const { mutate: createReaction, status } = useCreateReaction();
+  const { mutate: deleteReaction, status: deleteStatus } = useDeleteReaction();
   const groupedReactions = groupReactions(reactions);
-  const isPending = status === "pending";
+  const isPending = status === "pending" || deleteStatus === "pending";
 
   if (!canReact && groupedReactions.length === 0) return null;
 
@@ -42,6 +43,11 @@ export function ReactionButton({
         onSuccess: () => setOpen(false),
       },
     );
+  };
+
+  const handleDelete = (content: string) => {
+    if (!canReact || isPending) return;
+    deleteReaction({ targetType, targetId, content });
   };
 
   return (
@@ -78,9 +84,13 @@ export function ReactionButton({
       )}
 
       {groupedReactions.map((reaction) => (
-        <span
+        <button
           key={reaction.content}
-          className="inline-flex items-center gap-1 rounded-full border border-(--line) bg-(--paper-note) px-2 py-0.5 text-sm"
+          type="button"
+          disabled={!canReact || isPending}
+          onClick={() => handleDelete(reaction.content)}
+          className="inline-flex items-center gap-1 rounded-full border border-(--line) bg-(--paper-note) px-2 py-0.5 text-sm enabled:cursor-pointer enabled:hover:bg-(--accent-paper)/10 disabled:cursor-default"
+          aria-label={`${reaction.label} 리액션 취소`}
         >
           {reaction.iconUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -89,7 +99,7 @@ export function ReactionButton({
             <span>{reaction.label}</span>
           )}
           <span>{reaction.count}</span>
-        </span>
+        </button>
       ))}
     </div>
   );
