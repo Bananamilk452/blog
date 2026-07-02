@@ -112,7 +112,6 @@ function CommentItem({
                 comment={comment}
                 onToggle={() => setShowReplyEditor(!showReplyEditor)}
               />
-              <RenoteButton />
             </>
           )}
           <ReactionButton
@@ -161,14 +160,6 @@ function ReplyButton({
     >
       <span className="text-sm">{"replies" in comment && comment.replies.length}</span>
       <ReplyIcon className="size-4" />
-    </button>
-  );
-}
-
-function RenoteButton() {
-  return (
-    <button className="flex cursor-pointer items-center gap-1 text-(--ink-soft) hover:text-(--accent-paper)">
-      <Repeat2Icon className="size-4" />
     </button>
   );
 }
