@@ -34,7 +34,7 @@ export async function upsertActor(actor: Awaited<ReturnType<Activity["getActor"]
         [iconArrayBuffer],
         icon.url.toString().split("/").pop() || "avatar",
         {
-          type: icon.mediaType?.toString() || "image/jpeg",
+          type: icon.mediaType?.toString() || "",
         },
       );
       uploadedUrl = await uploadFile(iconFile, "remote-contents");
