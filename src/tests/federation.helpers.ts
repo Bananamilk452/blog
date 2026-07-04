@@ -10,8 +10,10 @@ vi.hoisted(() => {
       keys: { upsert: vi.fn() },
       follows: { create: vi.fn(), deleteMany: vi.fn(), findMany: vi.fn(), count: vi.fn() },
       inboxActivityLog: { create: vi.fn(), update: vi.fn(), findMany: vi.fn(), count: vi.fn() },
+      mainActor: { findFirst: vi.fn() },
       posts: { count: vi.fn(), findFirst: vi.fn(), findMany: vi.fn() },
       comment: { create: vi.fn(), delete: vi.fn(), findFirst: vi.fn(), update: vi.fn() },
+      directMessage: { create: vi.fn() },
       reaction: { create: vi.fn(), deleteMany: vi.fn(), findFirst: vi.fn() },
     },
     upsertActor: vi.fn(),
@@ -35,6 +37,7 @@ type FederationTestMocks = {
       findMany: ReturnType<typeof vi.fn>;
       count: ReturnType<typeof vi.fn>;
     };
+    mainActor: { findFirst: ReturnType<typeof vi.fn> };
     posts: {
       count: ReturnType<typeof vi.fn>;
       findFirst: ReturnType<typeof vi.fn>;
@@ -46,6 +49,7 @@ type FederationTestMocks = {
       findFirst: ReturnType<typeof vi.fn>;
       update: ReturnType<typeof vi.fn>;
     };
+    directMessage: { create: ReturnType<typeof vi.fn> };
     reaction: {
       create: ReturnType<typeof vi.fn>;
       deleteMany: ReturnType<typeof vi.fn>;
@@ -87,6 +91,12 @@ vi.mock("../lib/utils-federation", () => ({
     return formattedAttachments;
   },
   getTagFromNote: global.__federationTestMocks.getTagFromNote,
+  isPublic: (toIds: URL[] | string[]) =>
+    toIds.some(
+      (url) =>
+        (typeof url === "string" ? new URL(url) : url).href ===
+        "https://www.w3.org/ns/activitystreams#Public",
+    ),
   isUniqueConstraintError: (error: unknown) =>
     typeof error === "object" && error != null && "code" in error && error.code === "P2002",
   upsertActor: global.__federationTestMocks.upsertActor,

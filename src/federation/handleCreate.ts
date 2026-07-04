@@ -5,6 +5,7 @@ import { prisma } from "~/lib/prisma";
 import {
   formatNoteAttachments,
   getTagFromNote,
+  isPublic,
   isUniqueConstraintError,
   upsertActor,
 } from "~/lib/utils-federation";
@@ -28,23 +29,62 @@ export async function handleCreate(
   const author = await object.getAttribution();
   if (!isActor(author) || author.id?.href !== actor.href) return "ignored";
 
+  const mainActor = await prisma.mainActor.findFirst({ include: { actor: true } });
+  if (!mainActor) return "ignored";
+
+  const recipientUris = [...object.toIds, ...object.ccIds].map((recipient) => recipient.href);
+  const isDirectToMainActor =
+    !isPublic(recipientUris) && recipientUris.includes(mainActor.actor.uri);
+
   const replyTarget = await object.getReplyTarget();
-  if (replyTarget == null || !(replyTarget instanceof Note)) {
-    log("The Note does not have an replyTarget, skipping");
+  const replyTargetUri = replyTarget instanceof Note ? replyTarget.id?.toString() : undefined;
+
+  const post = replyTargetUri
+    ? await prisma.posts.findFirst({ where: { uri: replyTargetUri } })
+    : null;
+  const parentComment = replyTargetUri
+    ? await prisma.comment.findFirst({ where: { uri: replyTargetUri } })
+    : null;
+
+  if (replyTargetUri && !post && !parentComment && !isDirectToMainActor) {
+    log("replyTarget target not found in posts or comments");
     return "ignored";
   }
 
-  const uri = replyTarget.id?.toString();
-  const post = await prisma.posts.findFirst({ where: { uri } });
-  const parentComment = await prisma.comment.findFirst({ where: { uri } });
-
-  if (!post && !parentComment) {
-    log("replyTarget target not found in posts or comments");
+  if (!replyTargetUri && !isDirectToMainActor) {
+    log("The Note does not have a local replyTarget or direct local recipient, skipping");
     return "ignored";
   }
 
   const actorRecord = await upsertActor(author);
   if (!actorRecord || object.id == null) return "ignored";
+
+  if (!post && !parentComment) {
+    try {
+      await prisma.directMessage.create({
+        data: {
+          uri: object.id.href,
+          actorId: actorRecord.id,
+          content: object.content?.toString() || "",
+          url: object.url?.href?.toString(),
+          to: object.toIds.map((to) => to.href),
+          cc: object.ccIds.map((cc) => cc.href),
+          mentions: getTagFromNote(object),
+          replyTargetUri,
+          attachment: { createMany: { data: await formatNoteAttachments(object) } },
+        },
+      });
+    } catch (error) {
+      if (isUniqueConstraintError(error)) {
+        log(`Direct message already exists, skipping duplicate Create: ${object.id.href}`);
+        return "ignored";
+      }
+      throw error;
+    }
+
+    log(`Saved direct message: ${object.id.href}`);
+    return "handled";
+  }
 
   try {
     await prisma.comment.create({

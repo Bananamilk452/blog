@@ -1,5 +1,5 @@
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
-import { BugIcon } from "lucide-react";
+import { BugIcon, MailIcon } from "lucide-react";
 import Link from "next/link";
 
 import { ManageMainActor } from "~/components/dashboard/ManageMainActor";
@@ -34,15 +34,22 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle>운영 도구</CardTitle>
             <CardAction>
-              <Link href="/dashboard/activitypub-inbox">
-                <Button variant="outline">
-                  <BugIcon /> ActivityPub 수신 로그
-                </Button>
-              </Link>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Link href="/dashboard/direct-messages">
+                  <Button variant="outline">
+                    <MailIcon /> 다이렉트 메세지
+                  </Button>
+                </Link>
+                <Link href="/dashboard/activitypub-inbox">
+                  <Button variant="outline">
+                    <BugIcon /> ActivityPub 수신 로그
+                  </Button>
+                </Link>
+              </div>
             </CardAction>
           </CardHeader>
           <CardContent className="text-sm text-(--ink-soft)">
-            Inbox로 들어온 activity의 처리 상태와 원본 JSON-LD를 확인합니다.
+            ActivityPub 다이렉트 메세지를 확인하고, Inbox activity 처리 상태를 추적합니다.
           </CardContent>
         </Card>
         <PostList />

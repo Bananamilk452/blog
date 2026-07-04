@@ -34,6 +34,7 @@ model Actor {
   mainActor      MainActor?
   posts          Posts[]
   comments       Comment[]
+  directMessages DirectMessage[]
   reactions      Reaction[]
   avatar         Image?     @relation("Avatar", fields: [avatarId], references: [id])
   avatarId       String?    @unique
@@ -240,6 +241,42 @@ model Comment {
   updatedAt  DateTime     @default(now()) @updatedAt
 
   @@map("comments")
+}
+
+model DirectMessage {
+  id             String                    @id @default(uuid(7))
+  uri            String                    @unique
+  actorId        String
+  actor          Actor                     @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  content        String
+  url            String?
+  to             String[]                  @default([])
+  cc             String[]                  @default([])
+  mentions       Json[]                    @default([])
+  replyTargetUri String?
+  direction      String                    @default("incoming")
+  attachment     DirectMessageAttachment[]
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @default(now()) @updatedAt
+
+  @@index([actorId])
+  @@index([direction])
+  @@index([createdAt])
+  @@map("direct_messages")
+}
+
+model DirectMessageAttachment {
+  id              String        @id @default(uuid(7))
+  directMessageId String
+  directMessage   DirectMessage @relation(fields: [directMessageId], references: [id], onDelete: Cascade)
+  url             String
+  mediaType       String?
+  name            String?
+  sensitive       Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @default(now()) @updatedAt
+
+  @@map("direct_message_attachment")
 }
 
 model Reaction {

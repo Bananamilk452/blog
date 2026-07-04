@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --turbo",
     "build": "next build",
     "start": "next start",
     "test": "vitest run",
@@ -12,7 +12,8 @@
     "format": "oxfmt",
     "typecheck": "tsc --noEmit",
     "prisma": "prisma",
-    "tunnel": "pnpx untun tunnel http://localhost:3000"
+    "tunnel": "pnpx untun tunnel http://localhost:3000",
+    "dev:debug": "DEBUG=blog:federation pnpm dev"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.917.0",

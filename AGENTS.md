@@ -8,6 +8,7 @@
 - Tests: `pnpm test` runs `vitest run`; use `pnpm test -- <file-or-pattern>` for focused Vitest runs.
 - Formatting/linting are mutating commands: `pnpm format` runs `oxfmt`, and `pnpm lint` runs `oxlint --fix`.
 - Prisma commands go through `pnpm prisma <command>`; the schema is `src/prisma/schema.prisma` via `prisma.config.ts`.
+- Do not manually create or edit Prisma migration files. Change `src/prisma/schema.prisma` first, then generate migrations only through `pnpm prisma <command>`.
 
 ## Architecture
 
