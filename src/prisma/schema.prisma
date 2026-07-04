@@ -66,6 +66,7 @@ model Follows {
   updatedAt   DateTime @default(now()) @updatedAt
 
   @@id([followingId, followerId])
+  @@index([followerId])
   @@map("follows")
 }
 
@@ -111,6 +112,8 @@ model Posts {
   comments    Comment[]
   reactions   Reaction[]
 
+  @@index([state, createdAt])
+  @@index([state, publishedAt])
   @@map("posts")
 }
 
@@ -240,6 +243,8 @@ model Comment {
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @default(now()) @updatedAt
 
+  @@index([postId, createdAt])
+  @@index([createdAt])
   @@map("comments")
 }
 
