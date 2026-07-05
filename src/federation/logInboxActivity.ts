@@ -19,7 +19,7 @@ export function logInboxActivity<TActivity extends Activity>(
     const logRecord = await prisma.inboxActivityLog.create({
       data: {
         activityId: activity.id?.href,
-        activityType: activity.constructor.name,
+        activityType: (rawJson as { type: string })["type"],
         actorUri: activity.actorId?.href,
         objectId: activity.objectId?.href,
         rawJson: toPrismaJson(rawJson),
