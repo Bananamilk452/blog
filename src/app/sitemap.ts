@@ -1,3 +1,5 @@
+export const revalidate = 3600;
+
 import { getPublishedPostSitemapEntries } from "~/lib/models/post";
 import { getAbsoluteUrl } from "~/lib/seo";
 
