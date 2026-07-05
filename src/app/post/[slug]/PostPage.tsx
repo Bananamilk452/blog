@@ -1,5 +1,6 @@
 "use client";
 
+import { ErrorBoundary, Suspense } from "@suspensive/react";
 import { format } from "date-fns";
 import Image from "next/image";
 import { useMemo } from "react";
@@ -9,8 +10,9 @@ import { PostComments } from "~/components/post/PostComment";
 import { PostToc, TocHeading } from "~/components/post/PostToc";
 import { ReactionButton } from "~/components/post/ReactionButton";
 import { Badge } from "~/components/ui/badge";
+import { Skeleton } from "~/components/ui/skeleton";
 import { Image as ImageType, User } from "~/generated/prisma";
-import { usePost } from "~/hooks/usePost";
+import { usePost, usePostComments } from "~/hooks/usePost";
 import { useSession } from "~/hooks/useSession";
 
 type UserWithAvatar = User & {
@@ -18,7 +20,7 @@ type UserWithAvatar = User & {
 };
 
 export function PostPage({ slug }: { slug: string }) {
-  const { post, comments } = usePost(slug);
+  const post = usePost(slug);
   const { data: session } = useSession();
   const { contentHtml, headings } = useMemo(() => buildPostToc(post.content), [post.content]);
 
@@ -72,14 +74,60 @@ export function PostPage({ slug }: { slug: string }) {
           <div className="relative z-10" dangerouslySetInnerHTML={{ __html: contentHtml }}></div>
         </section>
 
-        <section className="shadow(--shadow) relative rounded-[30px] border-2 border-(--line) bg-(--paper)/95 p-8 before:pointer-events-none before:absolute before:inset-2.5 before:rounded-[inherit] before:border before:border-dashed before:border-(--accent-paper)/20 max-[900px]:p-5">
-          <div className="relative z-10">
-            <h3 className="mb-3 text-xl font-bold">댓글</h3>
-            <PostComments comments={comments} />
-          </div>
-        </section>
+        <PostCommentsSection slug={slug} />
       </article>
     </div>
+  );
+}
+
+function PostCommentsSection({ slug }: { slug: string }) {
+  return (
+    <ErrorBoundary fallback={<PostCommentsError />}>
+      <Suspense fallback={<PostCommentsFallback />}>
+        <PostCommentsContent slug={slug} />
+      </Suspense>
+    </ErrorBoundary>
+  );
+}
+
+function PostCommentsContent({ slug }: { slug: string }) {
+  const comments = usePostComments(slug);
+
+  return (
+    <CommentsCard>
+      <PostComments comments={comments} />
+    </CommentsCard>
+  );
+}
+
+function PostCommentsFallback() {
+  return (
+    <CommentsCard>
+      <div className="flex flex-col gap-4 py-2">
+        <Skeleton className="h-5 w-24" />
+        <Skeleton className="h-16 w-full rounded-[18px]" />
+        <Skeleton className="h-16 w-5/6 rounded-[18px]" />
+      </div>
+    </CommentsCard>
+  );
+}
+
+function PostCommentsError() {
+  return (
+    <CommentsCard>
+      <p className="muted py-8 text-center">댓글을 불러오지 못했습니다.</p>
+    </CommentsCard>
+  );
+}
+
+function CommentsCard({ children }: { children: React.ReactNode }) {
+  return (
+    <section className="shadow(--shadow) relative rounded-[30px] border-2 border-(--line) bg-(--paper)/95 p-8 before:pointer-events-none before:absolute before:inset-2.5 before:rounded-[inherit] before:border before:border-dashed before:border-(--accent-paper)/20 max-[900px]:p-5">
+      <div className="relative z-10">
+        <h3 className="mb-3 text-xl font-bold">댓글</h3>
+        {children}
+      </div>
+    </section>
   );
 }
 
