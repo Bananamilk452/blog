@@ -69,7 +69,10 @@ export function PostPage({ slug }: { slug: string }) {
         </section>
 
         <section className="shadow(--shadow) relative rounded-[30px] border-2 border-(--line) bg-(--paper)/95 p-8 before:pointer-events-none before:absolute before:inset-2.5 before:rounded-[inherit] before:border before:border-dashed before:border-(--accent-paper)/20 max-[900px]:p-5">
-          <div className="relative z-10" dangerouslySetInnerHTML={{ __html: contentHtml }}></div>
+          <div
+            className="relative z-10 prose w-full max-w-none"
+            dangerouslySetInnerHTML={{ __html: contentHtml }}
+          ></div>
         </section>
 
         <section className="shadow(--shadow) relative rounded-[30px] border-2 border-(--line) bg-(--paper)/95 p-8 before:pointer-events-none before:absolute before:inset-2.5 before:rounded-[inherit] before:border before:border-dashed before:border-(--accent-paper)/20 max-[900px]:p-5">
