@@ -1,5 +1,7 @@
+import { Suspense } from "@suspensive/react";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 
+import PostLoading from "./loading";
 import { PostPage } from "./PostPage";
 import { getCommentsBySlug, getPostBySlug } from "~/lib/actions/post";
 import { getQueryClient } from "~/lib/getQueryClient";
@@ -12,7 +14,6 @@ export default async function PostIdPage({ params }: { params: Promise<{ slug: s
     queryKey: ["post", slug] as const,
     queryFn: () => getPostBySlug(slug),
   });
-
   queryClient.prefetchQuery({
     queryKey: ["post-comments", slug] as const,
     queryFn: () => getCommentsBySlug(slug),
@@ -20,7 +21,9 @@ export default async function PostIdPage({ params }: { params: Promise<{ slug: s
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <PostPage slug={slug} />
+      <Suspense fallback={<PostLoading />}>
+        <PostPage slug={slug} />
+      </Suspense>
     </HydrationBoundary>
   );
 }

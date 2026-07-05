@@ -44,9 +44,6 @@ importers:
       '@logtape/logtape':
         specifier: ^2.0.0
         version: 2.2.1
-      '@noonnu/gyeonggi-batang':
-        specifier: ^0.1.0
-        version: 0.1.0
       '@prisma/client':
         specifier: 6.17.1
         version: 6.17.1(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3)
@@ -68,6 +65,12 @@ importers:
       '@radix-ui/react-slot':
         specifier: ^1.2.3
         version: 1.3.0(@types/react@19.2.17)(react@19.1.0)
+      '@suspensive/react':
+        specifier: ^3.21.2
+        version: 3.21.2(react@19.1.0)
+      '@suspensive/react-query':
+        specifier: npm:@suspensive/react-query-5@^3.21.2
+        version: '@suspensive/react-query-5@3.21.2(@tanstack/react-query@5.101.2(react@19.1.0))(react@19.1.0)'
       '@tailwindcss/typography':
         specifier: ^0.5.19
         version: 0.5.20(tailwindcss@4.3.1)
@@ -873,9 +876,6 @@ packages:
   '@noble/hashes@2.2.0':
     resolution: {integrity: sha512-IYqDGiTXab6FniAgnSdZwgWbomxpy9FtYvLKs7wCUs2a8RkITG+DFGO1DM9cr+E3/RgADRpFjrKVaJ1z6sjtEg==}
     engines: {node: '>= 20.19.0'}
-
-  '@noonnu/gyeonggi-batang@0.1.0':
-    resolution: {integrity: sha512-3u27tNz6jNcP+KPv/CwQ7vtyVjHkkPf8EcTeQDGshwICmeqbVv4t3bphbtHzP5RpgaKw2hz5N2v2/us8mY+rkA==}
 
   '@opentelemetry/api@1.9.1':
     resolution: {integrity: sha512-gLyJlPHPZYdAk1JENA9LeHejZe1Ti77/pTeFm/nMXmQH/HFZlcS/O2XJB+L8fkbrNSqhdtlvjBVjxwUYanNH5Q==}
@@ -1747,6 +1747,17 @@ packages:
 
   '@standard-schema/utils@0.3.0':
     resolution: {integrity: sha512-e7Mew686owMaPJVNNLs55PUvgz371nKgwsc4vxE49zsODpJEnxgxRo2y/OKrqueavXgZNMDVj3DdHFlaSAeU8g==}
+
+  '@suspensive/react-query-5@3.21.2':
+    resolution: {integrity: sha512-VjpVidHE+/QCVvWoPW034wrpLaaPKyX5GF14jcBLHtJIod7u7ijNakqL4vyHZePh1wLipQvH4sfc2GZvLi/Lyg==}
+    peerDependencies:
+      '@tanstack/react-query': '*'
+      react: ^18 || ^19
+
+  '@suspensive/react@3.21.2':
+    resolution: {integrity: sha512-RhD5cHZGSgi6JQU/ykAHYPJsrFT9WMEMCn5SVZ2EO3+e04tVpGnGltf7k+oM6eim+Cy+5liGu0gyDX250CJAlA==}
+    peerDependencies:
+      react: ^18 || ^19
 
   '@swc/helpers@0.5.15':
     resolution: {integrity: sha512-JQ5TuMi45Owi4/BIMAJBoSQoOJu12oOk/gADqlcUL9JEdHB8vyjUSsxqeNXnmXHjYKMi2WcYtezGEEhqUI/E2g==}
@@ -4556,8 +4567,6 @@ snapshots:
 
   '@noble/hashes@2.2.0': {}
 
-  '@noonnu/gyeonggi-batang@0.1.0': {}
-
   '@opentelemetry/api@1.9.1': {}
 
   '@opentelemetry/core@2.7.1(@opentelemetry/api@1.9.1)':
@@ -5263,6 +5272,15 @@ snapshots:
   '@standard-schema/spec@1.1.0': {}
 
   '@standard-schema/utils@0.3.0': {}
+
+  '@suspensive/react-query-5@3.21.2(@tanstack/react-query@5.101.2(react@19.1.0))(react@19.1.0)':
+    dependencies:
+      '@tanstack/react-query': 5.101.2(react@19.1.0)
+      react: 19.1.0
+
+  '@suspensive/react@3.21.2(react@19.1.0)':
+    dependencies:
+      react: 19.1.0
 
   '@swc/helpers@0.5.15':
     dependencies:

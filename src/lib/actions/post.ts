@@ -48,13 +48,18 @@ export async function getPostBySlug(slug: string) {
 }
 
 export async function getPosts(options: Parameters<typeof PostService.prototype.getPosts>[0]) {
-  const session = await getOptionalSession();
+  if (options?.include?.draft) {
+    const session = await getOptionalSession();
 
-  if (session?.user.role !== "admin" && options?.include?.draft) {
-    throw new Error("Unauthorized");
+    if (session?.user.role !== "admin") {
+      throw new Error("Unauthorized");
+    }
+
+    const postService = new PostService(session.user.id);
+    return await postService.getPosts(options);
   }
 
-  const postService = new PostService(session?.user.id);
+  const postService = new PostService();
 
   return await postService.getPosts(options);
 }
