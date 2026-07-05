@@ -25,8 +25,14 @@ export type InboxOperationSummary = {
   recentFollowActivities: Array<{
     id: string;
     activityType: string;
-    status: string;
     actorUri: string | null;
+    actor: {
+      name: string | null;
+      username: string;
+      handle: string;
+      url: string | null;
+      avatarUrl: string | null;
+    } | null;
     receivedAt: Date;
   }>;
   recentErrors: Array<{
@@ -113,7 +119,6 @@ export async function getInboxOperationSummary(): Promise<InboxOperationSummary>
       select: {
         id: true,
         activityType: true,
-        status: true,
         actorUri: true,
         receivedAt: true,
       },
@@ -144,12 +149,43 @@ export async function getInboxOperationSummary(): Promise<InboxOperationSummary>
     }),
   ]);
 
+  const followActorUris = recentFollowActivities.flatMap((activity) =>
+    activity.actorUri ? [activity.actorUri] : [],
+  );
+  const followActors = await prisma.actor.findMany({
+    where: { uri: { in: followActorUris } },
+    select: {
+      uri: true,
+      name: true,
+      username: true,
+      handle: true,
+      url: true,
+      avatar: { select: { url: true } },
+    },
+  });
+  const followActorsByUri = new Map(followActors.map((actor) => [actor.uri, actor]));
+
   return {
     inboxReceived24h,
     failedInboxCount,
     pendingInboxCount,
     followerCount,
-    recentFollowActivities,
+    recentFollowActivities: recentFollowActivities.map((activity) => {
+      const actor = activity.actorUri ? followActorsByUri.get(activity.actorUri) : null;
+
+      return {
+        ...activity,
+        actor: actor
+          ? {
+              name: actor.name,
+              username: actor.username,
+              handle: actor.handle,
+              url: actor.url,
+              avatarUrl: actor.avatar?.url ?? null,
+            }
+          : null,
+      };
+    }),
     recentErrors,
     recentActorUpdates,
   };

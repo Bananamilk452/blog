@@ -26,18 +26,36 @@ export async function ActivityPubOperationSummary() {
           <SummaryList title="최근 팔로우/언팔로우">
             {summary.recentFollowActivities.length > 0 ? (
               summary.recentFollowActivities.map((activity) => (
-                <li key={activity.id} className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline">{activity.activityType}</Badge>
-                    <span className="text-xs text-(--ink-soft)">{activity.status}</span>
+                <li key={activity.id} className="flex items-center gap-3">
+                  <ProfileAvatar
+                    src={activity.actor?.avatarUrl}
+                    name={activity.actor?.name ?? activity.actor?.username ?? activity.actorUri}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <ProfileName
+                        href={activity.actor?.url}
+                        name={
+                          activity.actor?.name ??
+                          activity.actor?.username ??
+                          activity.actorUri ??
+                          "Actor 없음"
+                        }
+                      />
+                      <Badge variant="outline" className="shrink-0">
+                        {activity.activityType === "Undo" ? "언팔로우" : "팔로우"}
+                      </Badge>
+                    </div>
+                    <div className="truncate text-sm text-(--ink-soft)">
+                      {activity.actor?.handle ?? activity.actorUri ?? "프로필 정보 없음"}
+                    </div>
+                    <time
+                      className="text-xs text-(--ink-soft)"
+                      dateTime={activity.receivedAt.toISOString()}
+                    >
+                      {format(activity.receivedAt, "yyyy.MM.dd HH:mm")}
+                    </time>
                   </div>
-                  <span className="truncate text-sm">{activity.actorUri ?? "Actor 없음"}</span>
-                  <time
-                    className="text-xs text-(--ink-soft)"
-                    dateTime={activity.receivedAt.toISOString()}
-                  >
-                    {format(activity.receivedAt, "yyyy.MM.dd HH:mm")}
-                  </time>
                 </li>
               ))
             ) : (
@@ -135,4 +153,35 @@ function SummaryList({ title, children }: { title: string; children: React.React
 
 function EmptyListItem({ children }: { children: React.ReactNode }) {
   return <li className="text-sm text-(--ink-soft)">{children}</li>;
+}
+
+function ProfileAvatar({ src, name }: { src?: string | null; name?: string | null }) {
+  if (src) {
+    return (
+      <div
+        aria-label={name ? `${name} avatar` : "Actor avatar"}
+        className="size-10 shrink-0 rounded-full bg-cover bg-center"
+        role="img"
+        style={{ backgroundImage: `url(${src})` }}
+      />
+    );
+  }
+
+  return (
+    <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-(--accent-muted) text-sm font-bold text-(--ink-soft)">
+      {(name ?? "?").slice(0, 1).toUpperCase()}
+    </div>
+  );
+}
+
+function ProfileName({ href, name }: { href?: string | null; name: string }) {
+  if (href) {
+    return (
+      <Link href={href} className="truncate font-medium hover:underline">
+        {name}
+      </Link>
+    );
+  }
+
+  return <span className="truncate font-medium">{name}</span>;
 }
