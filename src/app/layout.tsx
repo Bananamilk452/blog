@@ -9,14 +9,14 @@ import { Toaster } from "~/components/ui/sonner";
 import type { Metadata } from "next";
 
 const jetbrainsMono = localFont({
-  src: "./JetBrainsMonoVariable.ttf",
+  src: "./JetBrainsMonoVariable.woff2",
   display: "swap",
   weight: "100 900",
   variable: "--font-jetbrains-mono",
 });
 
 const gyeonggiBatang = localFont({
-  src: "../../node_modules/@noonnu/gyeonggi-batang/fonts/gyeonggibatang-normal.woff",
+  src: "./gyeonggibatang-normal.woff2",
   display: "swap",
   weight: "400",
   variable: "--font-gyeonggi-batang",
