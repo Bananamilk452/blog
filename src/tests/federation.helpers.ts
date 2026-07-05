@@ -6,7 +6,7 @@ vi.hoisted(() => {
   const global = globalThis as typeof globalThis & { __federationTestMocks?: FederationTestMocks };
   global.__federationTestMocks = {
     prisma: {
-      actor: { findFirst: vi.fn() },
+      actor: { findFirst: vi.fn(), findMany: vi.fn() },
       keys: { upsert: vi.fn() },
       follows: { create: vi.fn(), deleteMany: vi.fn(), findMany: vi.fn(), count: vi.fn() },
       inboxActivityLog: { create: vi.fn(), update: vi.fn(), findMany: vi.fn(), count: vi.fn() },
@@ -23,7 +23,7 @@ vi.hoisted(() => {
 
 type FederationTestMocks = {
   prisma: {
-    actor: { findFirst: ReturnType<typeof vi.fn> };
+    actor: { findFirst: ReturnType<typeof vi.fn>; findMany: ReturnType<typeof vi.fn> };
     keys: { upsert: ReturnType<typeof vi.fn> };
     follows: {
       create: ReturnType<typeof vi.fn>;

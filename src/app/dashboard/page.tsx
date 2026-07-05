@@ -1,7 +1,8 @@
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
-import { BugIcon, MailIcon } from "lucide-react";
+import { BellIcon, BugIcon, MailIcon } from "lucide-react";
 import Link from "next/link";
 
+import { ActivityPubOperationSummary } from "~/components/dashboard/ActivityPubOperationSummary";
 import { ManageMainActor } from "~/components/dashboard/ManageMainActor";
 import { ManageUser } from "~/components/dashboard/ManageUser";
 import { PostList } from "~/components/dashboard/post/PostList";
@@ -40,6 +41,11 @@ export default function DashboardPage() {
                     <MailIcon /> 다이렉트 메세지
                   </Button>
                 </Link>
+                <Link href="/dashboard/notifications">
+                  <Button variant="outline">
+                    <BellIcon /> ActivityPub 알림
+                  </Button>
+                </Link>
                 <Link href="/dashboard/activitypub-inbox">
                   <Button variant="outline">
                     <BugIcon /> ActivityPub 수신 로그
@@ -52,6 +58,7 @@ export default function DashboardPage() {
             ActivityPub 다이렉트 메세지를 확인하고, Inbox activity 처리 상태를 추적합니다.
           </CardContent>
         </Card>
+        <ActivityPubOperationSummary />
         <PostList />
         <RecentCommentList />
 
