@@ -1,6 +1,7 @@
 import { createFederation } from "@fedify/fedify";
 import { RedisKvStore, RedisMessageQueue } from "@fedify/redis";
 import {
+  Announce,
   Create,
   Delete,
   EmojiReact,
@@ -21,6 +22,7 @@ import { dispatchFollowers } from "./federation/dispatchFollowers";
 import { dispatchKeyPairs } from "./federation/dispatchKeyPairs";
 import { dispatchNote } from "./federation/dispatchNote";
 import { dispatchOutbox } from "./federation/dispatchOutbox";
+import { handleAnnounce } from "./federation/handleAnnounce";
 import { handleCreate } from "./federation/handleCreate";
 import { handleDelete } from "./federation/handleDelete";
 import { handleFollow } from "./federation/handleFollow";
@@ -60,6 +62,7 @@ federation
   .on(Update, logInboxActivity(handleUpdate))
   .on(Like, logInboxActivity(handleReaction))
   .on(EmojiReact, logInboxActivity(handleReaction))
+  .on(Announce, logInboxActivity(handleAnnounce))
   .on(QuoteRequest, logInboxActivity(handleQuoteRequest));
 
 federation
