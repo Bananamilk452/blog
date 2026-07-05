@@ -1,3 +1,4 @@
+import { GoogleAnalytics } from "@next/third-parties/google";
 import localFont from "next/font/local";
 
 import "~/lib/zod";
@@ -67,6 +68,7 @@ export default function RootLayout({
             <Toaster />
           </Providers>
         </ThemeProvider>
+        <GoogleAnalytics gaId="G-6KV0E36P4C" />
       </body>
     </html>
   );

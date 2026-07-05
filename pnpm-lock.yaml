@@ -44,6 +44,9 @@ importers:
       '@logtape/logtape':
         specifier: ^2.0.0
         version: 2.2.1
+      '@next/third-parties':
+        specifier: ^16.2.10
+        version: 16.2.10(next@15.5.9(@opentelemetry/api@1.9.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)
       '@prisma/client':
         specifier: 6.17.1
         version: 6.17.1(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3)
@@ -870,6 +873,12 @@ packages:
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [win32]
+
+  '@next/third-parties@16.2.10':
+    resolution: {integrity: sha512-H3yxCMLziM1JKXnjQv83WBH2cp1fB1vMxpC1/bBTpvvaesBEuRuprpzq5RI32atis0VhUZflgdpJdGNZIGpQaQ==}
+    peerDependencies:
+      next: ^13.0.0 || ^14.0.0 || ^15.0.0 || ^16.0.0-beta.0
+      react: ^18.2.0 || 19.0.0-rc-de68d2f4-20241204 || ^19.0.0
 
   '@noble/ciphers@2.2.0':
     resolution: {integrity: sha512-Z6pjIZ/8IJcCGzb2S/0Px5J81yij85xASuk1teLNeg75bfT07MV3a/O2Mtn1I2se43k3lkVEcFaR10N4cgQcZA==}
@@ -3485,6 +3494,9 @@ packages:
     resolution: {integrity: sha512-uxc/zpqFg6x7C8vOE7lh6Lbda8eEL9zmVm/PLeTPBRhh1xCgdWaQ+J1CUieGpIfm2HdtsUpRv+HshiasBMcc6A==}
     engines: {node: '>=6'}
 
+  third-party-capital@1.0.20:
+    resolution: {integrity: sha512-oB7yIimd8SuGptespDAZnNkzIz+NWaJCu2RMsbs4Wmp9zSDUM8Nhi3s2OOcqYuv3mN4hitXc8DVx+LyUmbUDiA==}
+
   tinybench@2.9.0:
     resolution: {integrity: sha512-0+DUvqWMValLmha6lr4kD8iAMK1HzV0/aKnCtWb9v9641TnP/MFb7Pc2bxoxQjTXAErryXVgUOfv2YqNllqGeg==}
 
@@ -4611,6 +4623,12 @@ snapshots:
 
   '@next/swc-win32-x64-msvc@15.5.7':
     optional: true
+
+  '@next/third-parties@16.2.10(next@15.5.9(@opentelemetry/api@1.9.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)':
+    dependencies:
+      next: 15.5.9(@opentelemetry/api@1.9.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      react: 19.1.0
+      third-party-capital: 1.0.20
 
   '@noble/ciphers@2.2.0': {}
 
@@ -7296,6 +7314,8 @@ snapshots:
   tailwindcss@4.3.1: {}
 
   tapable@2.3.3: {}
+
+  third-party-capital@1.0.20: {}
 
   tinybench@2.9.0: {}
 
