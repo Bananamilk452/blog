@@ -4,6 +4,8 @@ export default function PostLoading() {
   return (
     <div className="relative min-h-screen">
       <article className="mx-auto grid w-[min(860px,100%)] gap-5">
+        <div className="shadow(--shadow) relative min-h-[300px] overflow-hidden rounded-[28px] bg-(--paper)/95 sm:min-h-[420px]" />
+
         <section className="shadow(--shadow) relative rounded-[30px] border-2 border-(--line) bg-(--paper)/95 p-8 before:pointer-events-none before:absolute before:inset-2.5 before:rounded-[inherit] before:border before:border-dashed before:border-(--accent-paper)/20 max-[900px]:p-5">
           <div className="relative z-10 grid gap-5">
             <Skeleton className="h-9 w-2/3" />
