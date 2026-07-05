@@ -17,11 +17,14 @@ describe("handleAnnounce", () => {
     vi.spyOn(announce, "getActor").mockResolvedValue(actor);
     mocks.prisma.posts.findFirst.mockResolvedValueOnce({ id: "post-1" });
     mocks.prisma.comment.findFirst.mockResolvedValueOnce(null);
-    mocks.upsertActor.mockResolvedValueOnce({ id: "remote-actor" });
+    mocks.upsertActor.mockResolvedValueOnce({ id: "remote-actor", username: "bob", name: null });
 
     await expect(handleAnnounce(createCtx(), announce)).resolves.toBe("handled");
 
     expect(mocks.upsertActor).toHaveBeenCalledWith(actor);
+    expect(mocks.sendPushNotificationToAdmins).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "새 리노트", tag: "activitypub-renote" }),
+    );
   });
 
   it("ignores an Announce when the target is not local", async () => {
@@ -38,5 +41,6 @@ describe("handleAnnounce", () => {
     await expect(handleAnnounce(createCtx(), announce)).resolves.toBe("ignored");
 
     expect(mocks.upsertActor).not.toHaveBeenCalled();
+    expect(mocks.sendPushNotificationToAdmins).not.toHaveBeenCalled();
   });
 });

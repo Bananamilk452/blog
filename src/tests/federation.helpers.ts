@@ -14,10 +14,12 @@ vi.hoisted(() => {
       posts: { count: vi.fn(), findFirst: vi.fn(), findMany: vi.fn() },
       comment: { create: vi.fn(), delete: vi.fn(), findFirst: vi.fn(), update: vi.fn() },
       directMessage: { create: vi.fn() },
+      pushSubscription: { deleteMany: vi.fn(), findMany: vi.fn() },
       reaction: { create: vi.fn(), deleteMany: vi.fn(), findFirst: vi.fn() },
     },
     upsertActor: vi.fn(),
     getTagFromNote: vi.fn(),
+    sendPushNotificationToAdmins: vi.fn(),
   };
 });
 
@@ -50,6 +52,10 @@ type FederationTestMocks = {
       update: ReturnType<typeof vi.fn>;
     };
     directMessage: { create: ReturnType<typeof vi.fn> };
+    pushSubscription: {
+      deleteMany: ReturnType<typeof vi.fn>;
+      findMany: ReturnType<typeof vi.fn>;
+    };
     reaction: {
       create: ReturnType<typeof vi.fn>;
       deleteMany: ReturnType<typeof vi.fn>;
@@ -58,6 +64,7 @@ type FederationTestMocks = {
   };
   upsertActor: ReturnType<typeof vi.fn>;
   getTagFromNote: ReturnType<typeof vi.fn>;
+  sendPushNotificationToAdmins: ReturnType<typeof vi.fn>;
 };
 
 const global = globalThis as typeof globalThis & { __federationTestMocks: FederationTestMocks };
@@ -72,6 +79,14 @@ vi.mock("@fedify/redis", () => ({
 vi.mock("ioredis", () => ({ Redis: vi.fn(function Redis() {}) }));
 
 vi.mock("../lib/prisma", () => ({ prisma: global.__federationTestMocks.prisma }));
+
+vi.mock("../lib/push-notifications", () => ({
+  sendPushNotificationToAdmins: global.__federationTestMocks.sendPushNotificationToAdmins,
+}));
+
+vi.mock("~/lib/push-notifications", () => ({
+  sendPushNotificationToAdmins: global.__federationTestMocks.sendPushNotificationToAdmins,
+}));
 
 vi.mock("../lib/utils-federation", () => ({
   formatNoteAttachments: async (note: Note) => {

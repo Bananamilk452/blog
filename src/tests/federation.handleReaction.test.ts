@@ -18,7 +18,7 @@ describe("handleReaction", () => {
     vi.spyOn(like, "getActor").mockResolvedValue(actor);
     mocks.prisma.posts.findFirst.mockResolvedValueOnce({ id: "post-1" });
     mocks.prisma.comment.findFirst.mockResolvedValueOnce(null);
-    mocks.upsertActor.mockResolvedValueOnce({ id: "remote-actor" });
+    mocks.upsertActor.mockResolvedValueOnce({ id: "remote-actor", username: "bob", name: null });
 
     await expect(handleReaction(createCtx(), like)).resolves.toBe("handled");
 
@@ -32,6 +32,9 @@ describe("handleReaction", () => {
         targetUri: "https://example.com/post/hello",
       }),
     });
+    expect(mocks.sendPushNotificationToAdmins).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "새 마음", tag: "activitypub-like" }),
+    );
   });
 
   it("saves a remote EmojiReact with custom emoji metadata", async () => {
@@ -54,7 +57,7 @@ describe("handleReaction", () => {
     vi.spyOn(emojiReact, "getActor").mockResolvedValue(actor);
     mocks.prisma.posts.findFirst.mockResolvedValueOnce({ id: "post-1" });
     mocks.prisma.comment.findFirst.mockResolvedValueOnce(null);
-    mocks.upsertActor.mockResolvedValueOnce({ id: "remote-actor" });
+    mocks.upsertActor.mockResolvedValueOnce({ id: "remote-actor", username: "bob", name: null });
 
     await expect(handleReaction(createCtx(), emojiReact)).resolves.toBe("handled");
 
@@ -67,6 +70,9 @@ describe("handleReaction", () => {
         emojiIconMediaType: "image/png",
       }),
     });
+    expect(mocks.sendPushNotificationToAdmins).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "새 이모지 리액션", tag: "activitypub-emoji" }),
+    );
   });
 
   it("ignores duplicate reactions", async () => {
@@ -80,9 +86,10 @@ describe("handleReaction", () => {
     vi.spyOn(emojiReact, "getActor").mockResolvedValue(actor);
     mocks.prisma.posts.findFirst.mockResolvedValueOnce({ id: "post-1" });
     mocks.prisma.comment.findFirst.mockResolvedValueOnce(null);
-    mocks.upsertActor.mockResolvedValueOnce({ id: "remote-actor" });
+    mocks.upsertActor.mockResolvedValueOnce({ id: "remote-actor", username: "bob", name: null });
     mocks.prisma.reaction.create.mockRejectedValueOnce({ code: "P2002" });
 
     await expect(handleReaction(createCtx(), emojiReact)).resolves.toBe("ignored");
+    expect(mocks.sendPushNotificationToAdmins).not.toHaveBeenCalled();
   });
 });
