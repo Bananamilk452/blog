@@ -5,6 +5,7 @@ vi.mock("../lib/prisma", () => ({ prisma: {} }));
 vi.mock("../lib/utils-server", () => ({ downloadFile: vi.fn() }));
 
 import {
+  canViewComment,
   getTagFromNote,
   isFollowersOnly,
   isNonList,
@@ -30,6 +31,40 @@ describe("utils-federation", () => {
     it("detects followers-only addressing", () => {
       expect(isFollowersOnly(["https://example.com/users/alice/followers"], [])).toBe(true);
       expect(isFollowersOnly([], [PUBLIC_COLLECTION.href])).toBe(false);
+    });
+
+    it("allows public comments for anonymous readers and admin", () => {
+      const comment = { to: [PUBLIC_COLLECTION.href], cc: [] };
+
+      expect(canViewComment(comment)).toBe(true);
+      expect(canViewComment(comment, { role: "user" })).toBe(true);
+      expect(canViewComment(comment, { role: "admin" })).toBe(true);
+    });
+
+    it("allows unlisted comments for anonymous readers and admin", () => {
+      const comment = {
+        to: ["https://example.com/users/alice/followers"],
+        cc: [PUBLIC_COLLECTION.href],
+      };
+
+      expect(canViewComment(comment)).toBe(true);
+      expect(canViewComment(comment, { role: "user" })).toBe(true);
+      expect(canViewComment(comment, { role: "admin" })).toBe(true);
+    });
+
+    it("hides followers-only comments from anonymous and ordinary readers", () => {
+      const comment = { to: ["https://example.com/users/alice/followers"], cc: [] };
+
+      expect(canViewComment(comment)).toBe(false);
+      expect(canViewComment(comment, { role: "user" })).toBe(false);
+      expect(canViewComment(comment, { role: "admin" })).toBe(true);
+    });
+
+    it("hides direct comments from anonymous readers and allows admin", () => {
+      const comment = { to: ["https://remote.test/users/bob"], cc: [] };
+
+      expect(canViewComment(comment)).toBe(false);
+      expect(canViewComment(comment, { role: "admin" })).toBe(true);
     });
   });
 

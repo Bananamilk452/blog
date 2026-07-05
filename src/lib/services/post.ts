@@ -81,11 +81,15 @@ export class PostService {
   }
 
   async getCommentsBySlug(slug: string) {
-    return await getCommentsBySlug(slug, { includeFollowersOnly: this.isAdmin });
+    return await getCommentsBySlug(slug, {
+      viewer: this.isAdmin ? { role: "admin" } : undefined,
+    });
   }
 
   async getRecentComments(limit?: number) {
-    return await getRecentComments(limit);
+    return await getRecentComments(limit, {
+      viewer: this.isAdmin ? { role: "admin" } : undefined,
+    });
   }
 
   @requireUserId

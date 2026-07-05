@@ -16,12 +16,14 @@ import { Temporal } from "@js-temporal/polyfill";
 import DOMPurify from "isomorphic-dompurify";
 import { marked } from "marked";
 
-import { isFollowersOnly, isNonList, isPublic } from "../utils-federation";
+import { canViewComment, isFollowersOnly, isNonList, isPublic } from "../utils-federation";
 import { uploadFile } from "./s3";
 import { federation } from "~/federation";
 import { Category, Image, Prisma } from "~/generated/prisma";
 import { prisma } from "~/lib/prisma";
 import { federationDeliveryLog } from "~/lib/server-log";
+
+import type { CommentVisibilityViewer } from "../utils-federation";
 
 const commentInclude = {
   attachment: true,
@@ -341,7 +343,7 @@ export async function getCategories() {
 
 export async function getCommentsBySlug(
   slug: string,
-  options: { includeFollowersOnly?: boolean } = {},
+  options: { viewer?: CommentVisibilityViewer } = {},
 ) {
   const { id: postId } = await prisma.posts.findUniqueOrThrow({
     where: { slug },
@@ -357,9 +359,7 @@ export async function getCommentsBySlug(
   const commentsById = new Map<string, CommentWithReplies>();
   const topLevelComments: CommentWithReplies[] = [];
 
-  const visibleComments = options.includeFollowersOnly
-    ? comments
-    : comments.filter((comment) => !isFollowersOnly(comment.to, comment.cc));
+  const visibleComments = comments.filter((comment) => canViewComment(comment, options.viewer));
 
   for (const comment of visibleComments) {
     commentsById.set(comment.id, { ...comment, replies: [] });
@@ -378,10 +378,13 @@ export async function getCommentsBySlug(
   return topLevelComments;
 }
 
-export async function getRecentComments(limit = 5) {
-  return await prisma.comment.findMany({
+export async function getRecentComments(
+  limit = 5,
+  options: { viewer?: CommentVisibilityViewer } = {},
+) {
+  const comments = await prisma.comment.findMany({
     orderBy: { createdAt: "desc" },
-    take: limit,
+    take: options.viewer?.role === "admin" ? limit : undefined,
     include: {
       actor: true,
       post: {
@@ -392,6 +395,8 @@ export async function getRecentComments(limit = 5) {
       },
     },
   });
+
+  return comments.filter((comment) => canViewComment(comment, options.viewer)).slice(0, limit);
 }
 
 export async function createComment(

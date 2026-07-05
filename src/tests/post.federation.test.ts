@@ -46,9 +46,16 @@ vi.mock("~/lib/server-log", () => ({
 vi.mock("../lib/models/s3", () => ({ uploadFile: vi.fn() }));
 vi.mock("../lib/utils-federation", () => ({
   isPublic: (toIds: string[]) => toIds.includes("https://www.w3.org/ns/activitystreams#Public"),
-  isNonList: () => false,
+  isNonList: (toIds: string[], ccIds: string[]) =>
+    toIds.some((id) => id !== "https://www.w3.org/ns/activitystreams#Public") &&
+    ccIds.includes("https://www.w3.org/ns/activitystreams#Public"),
   isFollowersOnly: (toIds: string[], ccIds: string[]) =>
     ![...toIds, ...ccIds].includes("https://www.w3.org/ns/activitystreams#Public"),
+  canViewComment: (comment: { to: string[]; cc: string[] }, viewer?: { role?: string } | null) =>
+    viewer?.role === "admin" ||
+    comment.to.includes("https://www.w3.org/ns/activitystreams#Public") ||
+    (comment.to.some((id) => id !== "https://www.w3.org/ns/activitystreams#Public") &&
+      comment.cc.includes("https://www.w3.org/ns/activitystreams#Public")),
 }));
 vi.mock("marked", () => ({ marked: vi.fn(async (content: string) => `<p>${content}</p>`) }));
 vi.mock("isomorphic-dompurify", () => ({
@@ -249,19 +256,99 @@ describe("post model federation publishing", () => {
     expect(comments.map((comment) => comment.id)).toEqual(["comment-1"]);
   });
 
-  it("returns followers-only comments to admin readers", async () => {
+  it("returns public and unlisted comments to anonymous readers", async () => {
+    const publicComment = comment({ id: "comment-1", parentId: null });
+    const unlistedComment = comment({
+      id: "comment-2",
+      parentId: null,
+      to: ["https://example.com/users/alice/followers"],
+      cc: ["https://www.w3.org/ns/activitystreams#Public"],
+    });
+
+    mocks.prisma.posts.findUniqueOrThrow.mockResolvedValueOnce({ id: "post-1" });
+    mocks.prisma.comment.findMany.mockResolvedValueOnce([publicComment, unlistedComment]);
+
+    const comments = await postModel.getCommentsBySlug("hello");
+
+    expect(comments.map((comment) => comment.id)).toEqual(["comment-1", "comment-2"]);
+  });
+
+  it("hides direct comments from anonymous readers", async () => {
+    const directComment = comment({
+      id: "comment-1",
+      parentId: null,
+      to: ["https://remote.test/users/bob"],
+    });
+
+    mocks.prisma.posts.findUniqueOrThrow.mockResolvedValueOnce({ id: "post-1" });
+    mocks.prisma.comment.findMany.mockResolvedValueOnce([directComment]);
+
+    const comments = await postModel.getCommentsBySlug("hello");
+
+    expect(comments).toEqual([]);
+  });
+
+  it("returns followers-only and direct comments to admin readers", async () => {
     const followersOnlyComment = comment({
       id: "comment-1",
       parentId: null,
       to: ["https://example.com/users/alice/followers"],
     });
+    const directComment = comment({
+      id: "comment-2",
+      parentId: null,
+      to: ["https://remote.test/users/bob"],
+    });
 
     mocks.prisma.posts.findUniqueOrThrow.mockResolvedValueOnce({ id: "post-1" });
-    mocks.prisma.comment.findMany.mockResolvedValueOnce([followersOnlyComment]);
+    mocks.prisma.comment.findMany.mockResolvedValueOnce([followersOnlyComment, directComment]);
 
-    const comments = await postModel.getCommentsBySlug("hello", { includeFollowersOnly: true });
+    const comments = await postModel.getCommentsBySlug("hello", { viewer: { role: "admin" } });
+
+    expect(comments.map((comment) => comment.id)).toEqual(["comment-1", "comment-2"]);
+  });
+
+  it("filters recent comments with the shared visibility policy", async () => {
+    const publicComment = comment({ id: "comment-1", parentId: null });
+    const directComment = comment({
+      id: "comment-2",
+      parentId: null,
+      to: ["https://remote.test/users/bob"],
+    });
+    const unlistedComment = comment({
+      id: "comment-3",
+      parentId: null,
+      to: ["https://example.com/users/alice/followers"],
+      cc: ["https://www.w3.org/ns/activitystreams#Public"],
+    });
+    mocks.prisma.comment.findMany.mockResolvedValueOnce([
+      directComment,
+      publicComment,
+      unlistedComment,
+    ]);
+
+    const comments = await postModel.getRecentComments(2);
+
+    expect(comments.map((comment) => comment.id)).toEqual(["comment-1", "comment-3"]);
+    expect(mocks.prisma.comment.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ take: undefined }),
+    );
+  });
+
+  it("returns admin-visible recent comments", async () => {
+    const directComment = comment({
+      id: "comment-1",
+      parentId: null,
+      to: ["https://remote.test/users/bob"],
+    });
+    mocks.prisma.comment.findMany.mockResolvedValueOnce([directComment]);
+
+    const comments = await postModel.getRecentComments(5, { viewer: { role: "admin" } });
 
     expect(comments.map((comment) => comment.id)).toEqual(["comment-1"]);
+    expect(mocks.prisma.comment.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ take: 5 }),
+    );
   });
 
   it("sends a heart reaction as Like", async () => {
