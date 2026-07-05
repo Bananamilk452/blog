@@ -1,6 +1,6 @@
 import { dispatchComment } from "./dispatchComment";
 import { dispatchPost } from "./dispatchPost";
-import { log } from "./log";
+import { federationLog as log } from "~/lib/server-log";
 
 import type { RequestContext } from "@fedify/fedify";
 

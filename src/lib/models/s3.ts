@@ -1,6 +1,7 @@
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { randomUUID } from "crypto";
 
+import { storageLog } from "../server-log";
 import { convertImageBufferToWebp } from "../utils-image";
 
 if (
@@ -98,7 +99,8 @@ export async function uploadFile(file: File, path: string) {
 
   try {
     await client.send(command);
-  } catch {
+  } catch (error) {
+    storageLog("Failed to upload file to S3 path %s", path, error);
     throw new Error("파일 업로드에 실패했습니다.");
   }
 

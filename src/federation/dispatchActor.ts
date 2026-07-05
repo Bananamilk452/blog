@@ -1,8 +1,8 @@
 import { ActorKeyPair } from "@fedify/fedify";
 import { Endpoints, Image, Person } from "@fedify/vocab";
 
-import { log } from "./log";
 import { prisma } from "~/lib/prisma";
+import { federationLog as log } from "~/lib/server-log";
 
 import type { RequestContext } from "@fedify/fedify";
 

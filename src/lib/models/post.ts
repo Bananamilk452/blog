@@ -21,6 +21,7 @@ import { uploadFile } from "./s3";
 import { federation } from "~/federation";
 import { Category, Image, Prisma } from "~/generated/prisma";
 import { prisma } from "~/lib/prisma";
+import { federationDeliveryLog } from "~/lib/server-log";
 
 const commentInclude = {
   attachment: true,
@@ -622,8 +623,8 @@ export async function createComment(
       await ctx.sendActivity({ identifier: username }, directRecipients, create);
     }
   } catch (error) {
-    // Log federation errors but don't fail the comment creation
-    console.error("Failed to send Create activity for comment:", error);
+    // Federation delivery failures should not roll back local comment creation.
+    federationDeliveryLog("Failed to send Create activity for comment: %s", comment.uri, error);
   }
 
   return comment;

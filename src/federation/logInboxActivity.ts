@@ -1,4 +1,5 @@
 import { prisma } from "~/lib/prisma";
+import { federationInboxLog } from "~/lib/server-log";
 
 import type { InboxContext } from "@fedify/fedify";
 import type { Activity } from "@fedify/vocab";
@@ -33,14 +34,23 @@ export function logInboxActivity<TActivity extends Activity>(
         data: { status, handledAt: new Date() },
       });
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       await prisma.inboxActivityLog.update({
         where: { id: logRecord.id },
         data: {
           status: "failed",
-          errorMessage: error instanceof Error ? error.message : String(error),
+          errorMessage,
           handledAt: new Date(),
         },
       });
+      federationInboxLog(
+        "Failed to handle inbox activity: type=%s activityId=%s actor=%s object=%s error=%s",
+        activity.constructor.name,
+        activity.id?.href,
+        activity.actorId?.href,
+        activity.objectId?.href,
+        errorMessage,
+      );
       throw error;
     }
   };
