@@ -2,6 +2,12 @@ import { DirectMessageList } from "~/components/dashboard/DirectMessageList";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { DefaultLayout } from "~/layouts/default";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "다이렉트 메세지",
+};
+
 export default function DirectMessagesPage() {
   return (
     <DefaultLayout>

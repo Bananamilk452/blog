@@ -2,6 +2,12 @@ import { InboxNotificationList } from "~/components/dashboard/InboxNotificationL
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { DefaultLayout } from "~/layouts/default";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "ActivityPub 알림",
+};
+
 export default function NotificationsPage() {
   return (
     <DefaultLayout>

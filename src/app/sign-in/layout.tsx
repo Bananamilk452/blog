@@ -1,15 +1,13 @@
 import type { Metadata } from "next";
 
-export const dynamic = "force-dynamic";
-
 export const metadata: Metadata = {
-  title: "대시보드",
+  title: "로그인",
   robots: {
     index: false,
     follow: false,
   },
 };
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function SignInLayout({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }

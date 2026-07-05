@@ -2,6 +2,12 @@ import { ActivityPubInboxLogList } from "~/components/dashboard/ActivityPubInbox
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { DefaultLayout } from "~/layouts/default";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "ActivityPub 수신 로그",
+};
+
 export default function ActivityPubInboxPage() {
   return (
     <DefaultLayout>

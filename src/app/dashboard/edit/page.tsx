@@ -5,6 +5,12 @@ import { EditorProvider } from "~/components/providers/EditorProvider";
 import { getPost } from "~/lib/actions/post";
 import { getQueryClient } from "~/lib/getQueryClient";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "글 수정",
+};
+
 export default async function DashboardWritePage({
   searchParams,
 }: {

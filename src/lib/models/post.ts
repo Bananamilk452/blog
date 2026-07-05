@@ -337,6 +337,22 @@ export async function getPosts(options?: {
   return { records: posts, total: count };
 }
 
+export async function getPublishedPostSitemapEntries() {
+  return await prisma.posts.findMany({
+    where: {
+      state: "published",
+      slug: {
+        not: null,
+      },
+    },
+    orderBy: { updatedAt: "desc" },
+    select: {
+      slug: true,
+      updatedAt: true,
+    },
+  });
+}
+
 export async function getCategories() {
   return await prisma.category.findMany();
 }
