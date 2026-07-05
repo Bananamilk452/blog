@@ -1,6 +1,8 @@
 import { InboxNotificationList } from "~/components/dashboard/InboxNotificationList";
+import { PushNotificationSettings } from "~/components/dashboard/PushNotificationSettings";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { DefaultLayout } from "~/layouts/default";
+import { getPushNotificationSettings } from "~/lib/actions/pushNotification";
 
 import type { Metadata } from "next";
 
@@ -8,7 +10,9 @@ export const metadata: Metadata = {
   title: "ActivityPub 알림",
 };
 
-export default function NotificationsPage() {
+export default async function NotificationsPage() {
+  const pushSettings = await getPushNotificationSettings();
+
   return (
     <DefaultLayout>
       <div className="flex flex-col gap-6">
@@ -18,6 +22,18 @@ export default function NotificationsPage() {
             Inbox history에서 댓글, 마음, 이모지 리액션, 리노트를 모아 보여줍니다.
           </p>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>푸시 설정</CardTitle>
+            <CardDescription>
+              이 브라우저에서 ActivityPub 알림 수신 여부를 관리합니다.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PushNotificationSettings {...pushSettings} />
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>

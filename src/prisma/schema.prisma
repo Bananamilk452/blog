@@ -15,31 +15,31 @@ datasource db {
 }
 
 model Actor {
-  id             String     @id @default(uuid(7))
-  user           User?      @relation(fields: [userId], references: [id])
-  uri            String     @unique
+  id             String          @id @default(uuid(7))
+  user           User?           @relation(fields: [userId], references: [id])
+  uri            String          @unique
   username       String
-  handle         String     @unique
+  handle         String          @unique
   name           String?
-  inboxUrl       String     @unique
+  inboxUrl       String          @unique
   sharedInboxUrl String?
   url            String?
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @default(now()) @updatedAt
-  userId         String?    @unique
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @default(now()) @updatedAt
+  userId         String?         @unique
   summary        String?
   keys           Keys[]
-  following      Follows[]  @relation("Following")
-  follower       Follows[]  @relation("Follower")
+  following      Follows[]       @relation("Following")
+  follower       Follows[]       @relation("Follower")
   mainActor      MainActor?
   posts          Posts[]
   comments       Comment[]
   directMessages DirectMessage[]
   reactions      Reaction[]
-  avatar         Image?     @relation("Avatar", fields: [avatarId], references: [id])
-  avatarId       String?    @unique
-  banner         Image?     @relation("Banner", fields: [bannerId], references: [id])
-  bannerId       String?    @unique
+  avatar         Image?          @relation("Avatar", fields: [avatarId], references: [id])
+  avatarId       String?         @unique
+  banner         Image?          @relation("Banner", fields: [bannerId], references: [id])
+  bannerId       String?         @unique
 
   @@map("actor")
 }
@@ -91,24 +91,24 @@ model InboxActivityLog {
 }
 
 model Posts {
-  id          String    @id @default(uuid(7))
-  uri         String    @unique
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String     @id @default(uuid(7))
+  uri         String     @unique
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      String
-  actor       Actor     @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  actor       Actor      @relation(fields: [actorId], references: [id], onDelete: Cascade)
   actorId     String
   title       String
   content     String
-  state       String    @default("published")
+  state       String     @default("published")
   url         String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @default(now()) @updatedAt
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @default(now()) @updatedAt
   publishedAt DateTime?
   categoryId  String?
-  category    Category? @relation(fields: [categoryId], references: [id])
-  slug        String?   @unique
-  banner      Image?    @relation("PostBanner", fields: [bannerId], references: [id])
-  bannerId    String?   @unique
+  category    Category?  @relation(fields: [categoryId], references: [id])
+  slug        String?    @unique
+  banner      Image?     @relation("PostBanner", fields: [bannerId], references: [id])
+  bannerId    String?    @unique
   comments    Comment[]
   reactions   Reaction[]
 
@@ -161,10 +161,11 @@ model User {
   sessions      Session[]
   accounts      Account[]
 
-  username        String
-  displayUsername String
-  actor           Actor?
-  posts           Posts[]
+  username          String
+  displayUsername   String
+  actor             Actor?
+  posts             Posts[]
+  pushSubscriptions PushSubscription[]
 
   role       String?
   banned     Boolean?  @default(false)
@@ -174,6 +175,23 @@ model User {
   @@unique([email])
   @@unique([username])
   @@map("user")
+}
+
+model PushSubscription {
+  id        String    @id @default(uuid(7))
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String    @unique
+  p256dh    String
+  auth      String
+  enabled   Boolean   @default(true)
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now()) @updatedAt
+
+  @@index([userId])
+  @@index([enabled])
+  @@map("push_subscriptions")
 }
 
 model Session {

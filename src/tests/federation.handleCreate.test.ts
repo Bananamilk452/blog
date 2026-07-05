@@ -37,7 +37,7 @@ describe("handleCreate", () => {
     );
     mocks.prisma.posts.findFirst.mockResolvedValueOnce({ id: "post-1" });
     mocks.prisma.comment.findFirst.mockResolvedValueOnce(null);
-    mocks.upsertActor.mockResolvedValueOnce({ id: "remote-actor" });
+    mocks.upsertActor.mockResolvedValueOnce({ id: "remote-actor", username: "bob", name: null });
     mocks.getTagFromNote.mockReturnValueOnce([
       { type: "Mention", href: "https://example.com/users/alice", name: "@alice@example.com" },
     ]);
@@ -69,6 +69,9 @@ describe("handleCreate", () => {
         },
       }),
     });
+    expect(mocks.sendPushNotificationToAdmins).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "새 댓글", tag: "activitypub-comment" }),
+    );
   });
 
   it("creates a local reply using the parent comment post", async () => {
@@ -83,7 +86,7 @@ describe("handleCreate", () => {
     vi.spyOn(note, "getAttachments").mockReturnValue((async function* () {})() as NoteAttachments);
     mocks.prisma.posts.findFirst.mockResolvedValueOnce(null);
     mocks.prisma.comment.findFirst.mockResolvedValueOnce({ id: "parent-1", postId: "post-1" });
-    mocks.upsertActor.mockResolvedValueOnce({ id: "remote-actor" });
+    mocks.upsertActor.mockResolvedValueOnce({ id: "remote-actor", username: "bob", name: null });
     mocks.getTagFromNote.mockReturnValueOnce([]);
 
     await handleCreate(createCtx(), {
@@ -98,6 +101,9 @@ describe("handleCreate", () => {
         parentId: "parent-1",
       }),
     });
+    expect(mocks.sendPushNotificationToAdmins).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "새 댓글", tag: "activitypub-comment" }),
+    );
   });
 
   it("ignores duplicate Create(Note) activities", async () => {
@@ -109,7 +115,7 @@ describe("handleCreate", () => {
     vi.spyOn(note, "getAttachments").mockReturnValue((async function* () {})() as NoteAttachments);
     mocks.prisma.posts.findFirst.mockResolvedValueOnce({ id: "post-1" });
     mocks.prisma.comment.findFirst.mockResolvedValueOnce(null);
-    mocks.upsertActor.mockResolvedValueOnce({ id: "remote-actor" });
+    mocks.upsertActor.mockResolvedValueOnce({ id: "remote-actor", username: "bob", name: null });
     mocks.prisma.comment.create.mockRejectedValueOnce({ code: "P2002" });
 
     await expect(
@@ -118,6 +124,7 @@ describe("handleCreate", () => {
         getObject: vi.fn(async () => note),
       } as Pick<Create, "actorId" | "getObject"> as Create),
     ).resolves.toBe("ignored");
+    expect(mocks.sendPushNotificationToAdmins).not.toHaveBeenCalled();
   });
 
   it("stores a direct message from a remote Create(Note) without a local reply target", async () => {
@@ -138,7 +145,7 @@ describe("handleCreate", () => {
         });
       })() as NoteAttachments,
     );
-    mocks.upsertActor.mockResolvedValueOnce({ id: "remote-actor" });
+    mocks.upsertActor.mockResolvedValueOnce({ id: "remote-actor", username: "bob", name: null });
     mocks.getTagFromNote.mockReturnValueOnce([]);
 
     await expect(
@@ -172,5 +179,6 @@ describe("handleCreate", () => {
         },
       },
     });
+    expect(mocks.sendPushNotificationToAdmins).not.toHaveBeenCalled();
   });
 });

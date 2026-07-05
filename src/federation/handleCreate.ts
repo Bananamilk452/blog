@@ -1,6 +1,7 @@
 import { isActor, Note } from "@fedify/vocab";
 
 import { prisma } from "~/lib/prisma";
+import { sendPushNotificationToAdmins } from "~/lib/push-notifications";
 import { federationLog as log } from "~/lib/server-log";
 import {
   formatNoteAttachments,
@@ -40,10 +41,16 @@ export async function handleCreate(
   const replyTargetUri = replyTarget instanceof Note ? replyTarget.id?.toString() : undefined;
 
   const post = replyTargetUri
-    ? await prisma.posts.findFirst({ where: { uri: replyTargetUri } })
+    ? await prisma.posts.findFirst({
+        where: { uri: replyTargetUri },
+        select: { id: true, title: true, slug: true },
+      })
     : null;
   const parentComment = replyTargetUri
-    ? await prisma.comment.findFirst({ where: { uri: replyTargetUri } })
+    ? await prisma.comment.findFirst({
+        where: { uri: replyTargetUri },
+        select: { id: true, postId: true, post: { select: { title: true, slug: true } } },
+      })
     : null;
 
   if (replyTargetUri && !post && !parentComment && !isDirectToMainActor) {
@@ -110,5 +117,15 @@ export async function handleCreate(
   }
 
   log(`Saved comment: ${object.id.href}`);
+  await sendPushNotificationToAdmins({
+    title: "새 댓글",
+    body: `${actorRecord.name ?? actorRecord.username}님이 ${post?.title ?? parentComment?.post?.title ?? "게시글"}에 댓글을 남겼습니다.`,
+    url: getPostHref(post?.slug ?? parentComment?.post?.slug ?? null),
+    tag: "activitypub-comment",
+  });
   return "handled";
+}
+
+function getPostHref(slug: string | null) {
+  return slug ? `/post/${slug}` : "/dashboard/notifications";
 }
