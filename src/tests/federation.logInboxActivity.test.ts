@@ -2,6 +2,14 @@ import { Follow } from "@fedify/vocab";
 
 import { createCtx, mocks } from "./federation.helpers";
 
+const logMocks = vi.hoisted(() => ({
+  federationInboxLog: vi.fn(),
+}));
+
+vi.mock("~/lib/server-log", () => ({
+  federationInboxLog: logMocks.federationInboxLog,
+}));
+
 const { logInboxActivity } = await import("../federation/logInboxActivity");
 
 describe("logInboxActivity", () => {
@@ -50,5 +58,13 @@ describe("logInboxActivity", () => {
       where: { id: "log-1" },
       data: { status: "failed", errorMessage: "boom", handledAt: expect.any(Date) },
     });
+    expect(logMocks.federationInboxLog).toHaveBeenCalledWith(
+      "Failed to handle inbox activity: type=%s activityId=%s actor=%s object=%s error=%s",
+      "Follow",
+      undefined,
+      "https://remote.test/users/bob",
+      "https://example.com/users/alice",
+      "boom",
+    );
   });
 });

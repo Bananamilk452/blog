@@ -1,8 +1,8 @@
 import { Accept } from "@fedify/vocab";
 
-import { log } from "./log";
 import { createQuoteAuthorization, getQuoteAuthorizationUri } from "./quoteAuthorization";
 import { prisma } from "~/lib/prisma";
+import { federationLog as log } from "~/lib/server-log";
 
 import type { InboxActivityStatus } from "./logInboxActivity";
 import type { InboxContext } from "@fedify/fedify";

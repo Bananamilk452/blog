@@ -120,7 +120,6 @@ export function DirectMessageList() {
                     최신 3개만 보기
                   </button>
                 )}
-
               </li>
             );
           })}

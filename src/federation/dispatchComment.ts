@@ -1,9 +1,9 @@
 import { Document, Mention, Note } from "@fedify/vocab";
 import { Temporal } from "@js-temporal/polyfill";
 
-import { log } from "./log";
 import { createQuoteInteractionPolicy } from "./quoteAuthorization";
 import { prisma } from "~/lib/prisma";
+import { federationLog as log } from "~/lib/server-log";
 
 import type { RequestContext } from "@fedify/fedify";
 

@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
     lookupObject: vi.fn(),
     sendActivity: vi.fn(),
   },
+  federationDeliveryLog: vi.fn(),
   prisma: {
     $transaction: vi.fn(),
     mainActor: { findFirst: vi.fn() },
@@ -39,6 +40,9 @@ vi.mock("~/federation", () => ({
 }));
 
 vi.mock("~/lib/prisma", () => ({ prisma: mocks.prisma }));
+vi.mock("~/lib/server-log", () => ({
+  federationDeliveryLog: mocks.federationDeliveryLog,
+}));
 vi.mock("../lib/models/s3", () => ({ uploadFile: vi.fn() }));
 vi.mock("../lib/utils-federation", () => ({
   isPublic: (toIds: string[]) => toIds.includes("https://www.w3.org/ns/activitystreams#Public"),
@@ -148,6 +152,34 @@ describe("post model federation publishing", () => {
       { identifier: "alice" },
       "followers",
       expect.anything(),
+    );
+  });
+
+  it("keeps local comment creation when federation Create delivery fails", async () => {
+    mocks.prisma.posts.findUniqueOrThrow.mockResolvedValueOnce({ id: "post-1", slug: "hello" });
+    mocks.prisma.mainActor.findFirst.mockResolvedValueOnce(localMainActor());
+    mocks.prisma.posts.findUnique.mockResolvedValueOnce({
+      actor: { uri: "https://example.com/users/alice", username: "alice" },
+    });
+    mocks.prisma.comment.create.mockResolvedValueOnce({ id: "comment-1" });
+    mocks.prisma.comment.update.mockResolvedValueOnce({
+      id: "comment-1",
+      uri: "https://example.com/post/hello-comment",
+      createdAt: new Date("2026-01-02T00:00:00.000Z"),
+    });
+    mocks.ctx.getObject.mockResolvedValueOnce(null);
+
+    await expect(
+      postModel.createComment("local-actor-id", {
+        postId: "post-1",
+        content: "hello",
+      }),
+    ).resolves.toMatchObject({ id: "comment-1" });
+
+    expect(mocks.federationDeliveryLog).toHaveBeenCalledWith(
+      "Failed to send Create activity for comment: %s",
+      "https://example.com/post/hello-comment",
+      expect.any(Error),
     );
   });
 

@@ -1,8 +1,8 @@
 import { exportJwk, generateCryptoKeyPair, importJwk } from "@fedify/fedify";
 
-import { log } from "./log";
 import { Keys as Key } from "~/generated/prisma";
 import { prisma } from "~/lib/prisma";
+import { federationLog as log } from "~/lib/server-log";
 
 import type { Context } from "@fedify/fedify";
 

@@ -1,15 +1,13 @@
 import { Activity, Document, getActorHandle, Note, PUBLIC_COLLECTION } from "@fedify/vocab";
-import debug from "debug";
 
 import { uploadFile } from "./models/s3";
 import { prisma } from "./prisma";
 import { downloadFile } from "./utils-server";
-
-const log = debug("blog:federation");
+import { federationLog } from "~/lib/server-log";
 
 export async function upsertActor(actor: Awaited<ReturnType<Activity["getActor"]>>) {
   if (!actor || !actor.id || !actor.inboxId) {
-    log("Invalid actor data:", actor);
+    federationLog("Invalid actor data while upserting actor");
     throw new Error("Invalid actor data");
   }
 
@@ -86,7 +84,7 @@ export async function upsertActor(actor: Awaited<ReturnType<Activity["getActor"]
       });
     })
     .catch((err) => {
-      log("Error upserting actor:", err);
+      federationLog("Failed to upsert actor: %s", actorUri, err);
       throw err;
     });
 }

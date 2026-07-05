@@ -1,5 +1,5 @@
-import { log } from "./log";
 import { prisma } from "~/lib/prisma";
+import { federationLog as log } from "~/lib/server-log";
 
 import type { RequestContext } from "@fedify/fedify";
 

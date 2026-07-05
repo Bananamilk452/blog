@@ -1,7 +1,7 @@
 import { EmojiReact, Follow, Like } from "@fedify/vocab";
 
-import { log } from "./log";
 import { prisma } from "~/lib/prisma";
+import { federationLog as log } from "~/lib/server-log";
 
 import type { InboxActivityStatus } from "./logInboxActivity";
 import type { InboxContext } from "@fedify/fedify";
