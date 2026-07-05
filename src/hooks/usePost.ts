@@ -1,6 +1,6 @@
 "use client";
 
-import { useSuspenseQuery } from "@suspensive/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { notFound } from "next/navigation";
 
 import { getCommentsBySlug, getPostBySlug } from "~/lib/actions/post";
@@ -18,14 +18,10 @@ export function usePost(id: string) {
     },
   });
 
-  return post;
-}
-
-export function usePostComments(id: string) {
   const { data: comments } = useSuspenseQuery({
     queryKey: ["post-comments", id],
     queryFn: () => getCommentsBySlug(id),
   });
 
-  return comments;
+  return { post, comments };
 }

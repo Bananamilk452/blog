@@ -1,3 +1,4 @@
+import { Suspense } from "@suspensive/react";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { BellIcon, BugIcon, MailIcon } from "lucide-react";
 import Link from "next/link";
@@ -63,11 +64,15 @@ export default function DashboardPage() {
         <RecentCommentList />
 
         <HydrationBoundary state={dehydrate(queryClient)}>
-          <ManageMainActor />
+          <Suspense>
+            <ManageMainActor />
+          </Suspense>
         </HydrationBoundary>
 
         <HydrationBoundary state={dehydrate(queryClient)}>
-          <ManageUser />
+          <Suspense>
+            <ManageUser />
+          </Suspense>
         </HydrationBoundary>
       </div>
     </DefaultLayout>
