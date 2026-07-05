@@ -123,6 +123,21 @@ export function isFollowersOnly(toIds: URL[] | string[], ccIds: URL[] | string[]
   return false;
 }
 
+export type CommentVisibilityViewer = { role?: "admin" | string } | null | undefined;
+
+export type CommentVisibilityInput = {
+  to: URL[] | string[];
+  cc: URL[] | string[];
+};
+
+export function canViewComment(comment: CommentVisibilityInput, viewer?: CommentVisibilityViewer) {
+  if (viewer?.role === "admin") {
+    return true;
+  }
+
+  return isPublic(comment.to) === true || isNonList(comment.to, comment.cc);
+}
+
 export function getTagFromNote(note: Note) {
   const json = note.toJsonLd() as
     | {

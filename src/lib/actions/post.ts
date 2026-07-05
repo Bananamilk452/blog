@@ -74,9 +74,9 @@ export async function getCommentsBySlug(slug: string) {
 }
 
 export async function getRecentComments(limit?: number) {
-  await getValidAdminSession();
+  const session = await getValidAdminSession();
 
-  const postService = new PostService();
+  const postService = new PostService(session.user.id, session.user.role === "admin");
 
   return await postService.getRecentComments(limit);
 }
