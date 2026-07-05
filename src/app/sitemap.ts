@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 export const revalidate = 3600;
 
 import { getPublishedPostSitemapEntries } from "~/lib/models/post";
